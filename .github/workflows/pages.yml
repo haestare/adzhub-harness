@@ -36,7 +36,13 @@ jobs:
       - name: Carimbar assets (cache-busting + build visível na tela)
         run: node .github/carimbar.mjs
 
+      # enablement: true liga o Pages pela API se ele ainda estiver desligado.
+      # Sem isso a primeira execucao morre em "Get Pages site failed / Not Found",
+      # que e um 404 do repo, nao um erro do workflow: o passo consulta um recurso
+      # que so passa a existir depois de alguem clicar em Settings > Pages.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

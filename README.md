@@ -73,6 +73,30 @@ ancorada. Cada passo é clicável e mostra args + observação (JSON).
 
 Os **5 problemas plantados** (não rotulados no dado) e o gabarito estão em [`data/README.md`](data/README.md).
 
+## A demo sobe sozinha
+
+Este projeto vive em dois lugares de propósito: aqui (espelho versionado do workspace) e no
+repo público [`haestare/adzhub-harness`](https://github.com/haestare/adzhub-harness), que é o
+link do formulário e a fonte do deploy no Railway.
+
+`build/sync-demo.mjs` espelha um no outro e dá push. Ele é disparado por **dois gatilhos**, e
+os dois são de propósito:
+
+| Gatilho | Quando | Por quê |
+|---|---|---|
+| `.githooks/post-commit` | a cada commit que toque `adzhub-harness/` | pega toda mudança, venha de onde vier |
+| hook `Stop` (`.claude/settings.json`) | ao fim de um turno do Claude Code | pega mudança que ainda não virou commit |
+
+Ligar o git hook num clone novo (o `.git/hooks/` não é versionado):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+O modo `--auto` compara uma impressão digital (caminho + tamanho + mtime) com `.sync-state` e
+**sai calado quando nada mudou**, para não pagar rede a cada commit do workspace. Rodar na mão:
+`node adzhub-harness/build/sync-demo.mjs` (ou `--check` para ver o que faria).
+
 ## Deploy (Railway)
 
 A demo é estática, mas o Railway roda um processo, então incluí um servidor mínimo

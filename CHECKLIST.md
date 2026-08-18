@@ -46,11 +46,14 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 ## Melhorias já aplicadas nesta revisão
 - Paper: citação do RLM (arXiv:2512.24601) e nod ao GraphRAG, que a página lista.
 - Protótipo: o agente agora é instruído a usar **tabela** para dados comparativos (não lista aninhada).
-- Protótipo: **tema claro/escuro** com toggle.
-- Protótipo: dropdown de modelo, tabelas estilo Ads Manager, resposta digitada ao vivo, trace agrupado.
+- Protótipo: **tema claro/escuro** com toggle (persistente, sem flash ao abrir).
+- Protótipo: dropdown de modelo, tabelas estilo Ads Manager, trace agrupado (`N×`).
+- Protótipo: **streaming SSE real** no modo LLM. O texto aparece token a token enquanto o modelo
+  gera; os `tool_calls` chegam fatiados e são remontados no transporte, então o loop inteiro é
+  streamado sem chamada extra. No modo simulado continua o typewriter (não há LLM para streamar).
+- Docs: `paper/GUIA-DO-PAPER.pdf` e `CHECKLIST.pdf` (versões em PDF, mais fáceis de ler).
 
-## Opcionais que dá pra fazer se sobrar tempo (não bloqueiam a entrega)
+## Opcionais que ficam de fora (não bloqueiam a entrega)
 - Ouvir o **podcast AdzHub · Harness** e o **How I AI** e citar uma frase no §1 (reforça o critério
   "aprofundamento no estudo"). Deixei de fora do paper para não afirmar o que você ainda não ouviu.
-- **Streaming real** de token no modo LLM (hoje é typewriter da resposta final; visual idêntico).
 - Um segundo cliente no mock, para mostrar multi-conta (o paper já assume um cliente por escolha de MVP).

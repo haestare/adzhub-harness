@@ -58,14 +58,16 @@
   }
 
   // ---- 2/3. loop ReAct com tools (APIs) e skills (Apps) ---------------------
-  async function llmLoop({ message, apiKey, model, pack, emit }) {
+  async function llmLoop({ message, apiKey, model, pack, emit, onDelta }) {
     const messages = [
       { role: "system", content: systemPrompt(pack) },
       { role: "user", content: message },
     ];
     const allow = new Set(AZ.HARNESS_CONFIG.allowlist);
     for (let step = 1; step <= AZ.HARNESS_CONFIG.maxSteps; step++) {
-      const r = await AZ.llm.chat({ apiKey, model, messages, tools: AZ.toolSpecs });
+      // o texto que chega em stream é escrito na tela ao vivo; se no fim vier
+      // tool_calls junto, aquilo era raciocínio e a tela descarta (ver app.js).
+      const r = await AZ.llm.chat({ apiKey, model, messages, tools: AZ.toolSpecs, onDelta });
       if (!r.ok) { emit({ type: "error", text: r.error }); return { answer: null, error: r.error }; }
       const msg = r.message;
       const calls = msg.tool_calls || [];
@@ -88,7 +90,7 @@
       }
     }
     // atingiu max_steps: pede fechamento sem mais tools
-    const r = await AZ.llm.chat({ apiKey, model, messages: messages.concat([{ role: "user", content: "Feche com a melhor resposta possível a partir do que já coletou." }]), tools: [] });
+    const r = await AZ.llm.chat({ apiKey, model, messages: messages.concat([{ role: "user", content: "Feche com a melhor resposta possível a partir do que já coletou." }]), tools: [], onDelta });
     const text = r.ok ? (r.message.content || "") : (r.error || "");
     emit({ type: r.ok ? "final" : "error", text });
     return { answer: r.ok ? text : null, error: r.ok ? null : text };
@@ -96,11 +98,11 @@
 
   // ---- orquestrador ---------------------------------------------------------
   AZ.Harness = {
-    async run({ message, mode, apiKey, model, emit }) {
+    async run({ message, mode, apiKey, model, emit, onDelta }) {
       emit = emit || (() => {});
       const pack = hydrate(message, emit); // memória sempre hidratada (ambiente)
       if (mode === "llm") {
-        return await llmLoop({ message, apiKey, model, pack, emit });
+        return await llmLoop({ message, apiKey, model, pack, emit, onDelta });
       }
       // modo simulado: planner roteirizado executando as tools reais
       const { answer, intent } = AZ.planner.run(message, emit);

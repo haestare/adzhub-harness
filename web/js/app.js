@@ -186,10 +186,12 @@
     liveTrace.innerHTML = "";
     const steps = [];
     let toolIdx = 0, last = null; // last: grupo de tool consecutivo aberto
+    let resetLive = () => {};     // definido abaixo, junto com o balão ao vivo
     const emit = (step) => {
       if (step.type === "final") return;
       steps.push(step);
       if (step.type === "tool") {
+        resetLive();              // o texto streamado antes da tool era raciocínio
         toolIdx++;
         if (last && last.name === step.name) { // mesma tool em sequência -> agrupa no card
           last.count++;
@@ -208,12 +210,26 @@
       liveTrace.scrollTop = liveTrace.scrollHeight;
     };
 
-    const thinkingBody = addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>'; body.append(b); });
+    const DOTS = '<span class="dots"><i></i><i></i><i></i></span>';
+    const thinkingBody = addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = DOTS; body.append(b); });
+    const liveBubble = thinkingBody.querySelector(".bubble");
+
+    // streaming: escreve o texto do LLM no balão conforme chega.
+    // Se logo depois vier uma tool call, aquele texto era raciocínio (vai para o
+    // trace) e o balão volta aos dots. Ver "reset" dentro do emit acima.
+    let streamed = "";
+    const onDelta = (_piece, full) => {
+      streamed = full;
+      liveBubble.innerHTML = renderMarkdown(full) + '<span class="caret"></span>';
+      messages.scrollTop = messages.scrollHeight;
+    };
+    resetLive = () => { streamed = ""; liveBubble.innerHTML = DOTS; };
 
     let out;
-    try { out = await AZ.Harness.run({ message: text, mode: S.mode, apiKey: S.key, model: S.model, emit }); }
+    try { out = await AZ.Harness.run({ message: text, mode: S.mode, apiKey: S.key, model: S.model, emit, onDelta }); }
     catch (e) { out = { answer: null, error: String(e && e.message || e) }; }
 
+    const cameFromStream = !!streamed && !!out && out.answer === streamed;
     thinkingBody.innerHTML = "";
     thinkingBody.append(el("div", "who", "Agente AdzHub"));
     const bubble = el("div", "bubble"); thinkingBody.append(bubble);
@@ -231,7 +247,11 @@
       S.running = false; $("#sendBtn").disabled = false;
     };
 
-    if (out && out.answer) revealAnswer(bubble, out.answer, finalize);
+    if (out && out.answer && cameFromStream) {
+      // já foi escrito ao vivo (token a token): só fixa o markdown final
+      bubble.innerHTML = renderMarkdown(out.answer);
+      finalize();
+    } else if (out && out.answer) revealAnswer(bubble, out.answer, finalize);
     else {
       bubble.innerHTML = renderMarkdown("**Não consegui responder.** " + (out && out.error ? out.error : "") +
         (S.mode === "llm" ? "\n\nConfira a key e o modelo em ⚙ Configurar, ou use o modo simulado." : ""));

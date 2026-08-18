@@ -3,7 +3,7 @@ const ROOT = '/home/user/Claude/adzhub-harness';
 const ctx = { console, location:{origin:''}, setTimeout, JSON, Math, Date };
 ctx.window = ctx;
 vm.createContext(ctx);
-for (const f of ['web/data.js','web/js/tools.js','web/js/planner.js','web/js/openrouter.js','web/js/harness.js']) {
+for (const f of ['web/data.js','web/js/tools.js','web/js/usage.js','web/js/nexo.js','web/js/planner.js','web/js/openrouter.js','web/js/harness.js']) {
   vm.runInContext(fs.readFileSync(ROOT+'/'+f,'utf8'), ctx, {filename:f});
 }
 const AZ = ctx.AZ;
@@ -19,7 +19,10 @@ const prompts = [
     const tools = [];
     const emit = (s) => { if (s.type==='tool') tools.push(s.name); };
     const out = await AZ.Harness.run({ message:p, mode:'sim', emit });
+    const u = out.uso || {};
     console.log("\n########## ["+tag+"] tools=["+tools.join(", ")+"]");
+    console.log("# custo estimado do turno: "+u.chamadas+" chamada(s) de LLM · "+
+      AZ.tokens.fmt(u.entrada)+" entrada + "+AZ.tokens.fmt(u.saida)+" saida = "+AZ.tokens.fmt(u.total)+" tokens");
     console.log(out.answer);
   }
 })();

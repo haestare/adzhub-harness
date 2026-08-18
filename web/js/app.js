@@ -1,5 +1,11 @@
 /* app.js · UI: composer, render de mensagens, resposta digitada ao vivo,
-   trace com agrupamento de tools repetidas, config. */
+   trace com agrupamento de tools repetidas, medidor de tokens e config.
+
+   MEDIDOR DE TOKENS: o gestor vê o consumo em três granularidades, porque cada
+   uma responde uma pergunta diferente. Por CHAMADA (no trace) mostra por que a
+   entrada cresce a cada passo do loop; por TURNO (rodapé da resposta) mostra o
+   que aquela pergunta custou; por SESSÃO (medidor do topo) mostra o acumulado.
+   Número medido e número estimado nunca se misturam: estimativa sempre com ≈. */
 (function () {
   const AZ = window.AZ;
   const $ = (s) => document.querySelector(s);
@@ -110,6 +116,26 @@
       head.onclick = () => det.style.display = det.style.display === "none" ? "block" : "none";
       n.append(head, det); return n;
     }
+    if (step.type === "uso") {
+      const u = step.uso, est = u.estimado;
+      const n = el("div", "step uso"); const head = el("div", "head");
+      head.append(
+        el("span", "idx", "⛽"),
+        el("span", "name", (typeof step.passo === "number" ? "chamada " + step.passo : String(step.passo)) + " de LLM"),
+        el("span", "lbl", (est ? "≈ " : "") + "↑" + AZ.tokens.fmt(u.entrada) + " ↓" + AZ.tokens.fmt(u.saida))
+      );
+      const det = el("div", "detail"); det.style.display = "none";
+      const custo = AZ.tokens.fmtCusto(u.custo);
+      det.innerHTML = [
+        `entrada: <b>${u.entrada.toLocaleString("pt-BR")}</b> · saída: <b>${u.saida.toLocaleString("pt-BR")}</b> · total: <b>${u.total.toLocaleString("pt-BR")}</b>`,
+        custo ? `custo: <b>${custo}</b>` : "",
+        `modelo: ${step.modelo || "—"}`,
+        est ? "<i>estimado: neste modo não há LLM, o número reconstrói o que este mesmo turno custaria.</i>"
+            : "<i>medido: usage devolvido pela própria API.</i>",
+      ].filter(Boolean).join("<br>");
+      head.onclick = () => det.style.display = det.style.display === "none" ? "block" : "none";
+      n.append(head, det); return n;
+    }
     if (step.type === "thinking") {
       const n = el("div", "step thinking"); const head = el("div", "head");
       head.append(el("span", "idx", "·"), el("span", "name", "raciocínio"));
@@ -156,9 +182,9 @@
 
   function addMsg(role, buildBody) {
     const m = el("div", "msg " + role);
-    m.append(el("div", "avatar", role === "user" ? "R" : "A"));
+    m.append(el("div", "avatar", role === "user" ? "R" : "N"));
     const body = el("div", "body");
-    body.append(el("div", "who", role === "user" ? "Você" : "Agente AdzHub"));
+    body.append(el("div", "who", role === "user" ? "Você" : AZ.NEXO.nome));
     buildBody(body);
     m.append(body); messages.append(m);
     messages.scrollTop = messages.scrollHeight;
@@ -168,13 +194,58 @@
   function greeting() {
     addMsg("bot", (body) => {
       const b = el("div", "bubble");
-      b.innerHTML = renderMarkdown([
-        "Sou o agente da conta **Housewhey** (operação SPOT). Não sou um chatbot: cruzo os dados reais da conta pelas tools e mostro cada passo no painel de trace à direita.",
-        "",
-        "Comece por um dos atalhos abaixo, ou peça o que quiser. No modo **simulado** (padrão) já funciono sem chave. Para raciocínio de LLM, abra **⚙ Configurar** e cole sua OpenRouter key.",
-      ].join("\n"));
+      b.innerHTML = renderMarkdown(AZ.NEXO.abertura);
       body.append(b);
     });
+  }
+
+  // ---- medidor de tokens --------------------------------------------------
+  // rodapé de um turno: total + abre o detalhamento chamada por chamada, que é
+  // o que explica o número (um turno de agente é N chamadas, não uma).
+  function usoDoTurno(uso, passos) {
+    const est = uso.estimado;
+    const custo = AZ.tokens.fmtCusto(uso.custo);
+    const det = el("details", "uso-box");
+    det.append(el("summary", null,
+      `<span class="uso-tot">${est ? "≈" : ""}${AZ.tokens.fmt(uso.total)} tokens</span>` +
+      `<span class="uso-sep">↑ ${AZ.tokens.fmt(uso.entrada)} entrada</span>` +
+      `<span class="uso-sep">↓ ${AZ.tokens.fmt(uso.saida)} saída</span>` +
+      `<span class="uso-sep">${uso.chamadas} chamada${uso.chamadas > 1 ? "s" : ""} de LLM</span>` +
+      (custo ? `<span class="uso-sep">${custo}</span>` : "") +
+      (est ? `<span class="uso-tag">estimado</span>` : `<span class="uso-tag medido">medido</span>`)));
+    const linhas = passos.map((p, i) =>
+      `<tr><td>${typeof p.passo === "number" ? "chamada " + p.passo : p.passo}</td>` +
+      `<td class="num">${p.uso.entrada.toLocaleString("pt-BR")}</td>` +
+      `<td class="num">${p.uso.saida.toLocaleString("pt-BR")}</td>` +
+      `<td class="num">${p.uso.total.toLocaleString("pt-BR")}</td></tr>`).join("");
+    const box = el("div", "uso-det");
+    box.innerHTML =
+      `<table class="uso-tbl"><thead><tr><th>passo</th><th class="num">entrada</th><th class="num">saída</th><th class="num">total</th></tr></thead><tbody>${linhas}</tbody></table>` +
+      `<p class="uso-nota">${est
+        ? "Não houve LLM neste turno (modo simulado). Os números reconstroem o que ele custaria: uma chamada por tool mais a de fechamento, cada uma reenviando tudo que veio antes. É por isso que a entrada cresce a cada passo."
+        : "Números medidos, vindos do <code>usage</code> da própria API. A entrada cresce a cada passo porque o loop reenvia a conversa inteira mais as observações das tools."}</p>`;
+    det.append(box);
+    return det;
+  }
+
+  // medidor da sessão, no topo (o acumulado de tudo que já rodou nesta aba)
+  function pintarMedidor(ultimo) {
+    const sess = AZ.tokens.sessao();
+    $("#meterN").textContent = (sess.estimado ? "≈" : "") + AZ.tokens.fmt(sess.total);
+    const custo = AZ.tokens.fmtCusto(sess.custo);
+    const linha = (rot, u) => u ?
+      `<div class="mp-row"><span>${rot}</span><b>${(u.estimado ? "≈" : "") + AZ.tokens.fmt(u.total)}</b></div>
+       <div class="mp-sub">↑ ${u.entrada.toLocaleString("pt-BR")} entrada · ↓ ${u.saida.toLocaleString("pt-BR")} saída · ${u.chamadas} chamada(s)</div>` : "";
+    $("#meterPanel").innerHTML =
+      `<div class="mp-h">Consumo de tokens</div>` +
+      linha("Última resposta", ultimo) +
+      linha("Sessão inteira", sess) +
+      (custo ? `<div class="mp-sub">custo acumulado: <b>${custo}</b></div>` : "") +
+      `<div class="mp-nota">${sess.estimado
+        ? "Inclui turno(s) do modo simulado, onde não há LLM: ali o número é estimativa (≈), não medição."
+        : "Números medidos pela API a cada chamada."}</div>` +
+      `<button class="btn mp-zerar" id="meterZerar">Zerar contador</button>`;
+    $("#meterZerar").onclick = (e) => { e.stopPropagation(); AZ.tokens.zerarSessao(); pintarMedidor(null); };
   }
 
   // ---- envio --------------------------------------------------------------
@@ -231,10 +302,15 @@
 
     const cameFromStream = !!streamed && !!out && out.answer === streamed;
     thinkingBody.innerHTML = "";
-    thinkingBody.append(el("div", "who", "Agente AdzHub"));
+    thinkingBody.append(el("div", "who", AZ.NEXO.nome));
     const bubble = el("div", "bubble"); thinkingBody.append(bubble);
 
     const finalize = () => {
+      if (out && out.uso && out.uso.chamadas) {
+        thinkingBody.append(usoDoTurno(out.uso, steps.filter((s) => s.type === "uso")));
+        AZ.tokens.acumularNaSessao(out.uso);
+        pintarMedidor(out.uso);
+      }
       if (steps.length) {
         const det = el("details", "trace-toggle");
         const nTools = steps.filter((s) => s.type === "tool").length;
@@ -331,6 +407,11 @@
       refreshCfgUI();
     };
     $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal") $("#modal").classList.remove("on"); });
+
+    // medidor de tokens no topo: clique abre o detalhamento da sessão
+    pintarMedidor(null);
+    $("#meterBtn").onclick = (e) => { e.stopPropagation(); $("#meter").classList.toggle("on"); };
+    document.addEventListener("click", (e) => { if (!e.target.closest("#meter")) $("#meter").classList.remove("on"); });
 
     refreshCfgUI();
     greeting();

@@ -29,6 +29,8 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Simula tools/APIs/Supercérebro com dataset | ✅ 7 mocks cruzados (Housewhey) |
 | Deploy público (Railway recomendado) | ✅ https://adzhub-harness-production.up.railway.app |
 | UI/UX | ✅ tema claro/escuro, tabelas estilo Ads Manager, resposta digitada ao vivo, animações, trace agrupado (Nx) |
+| Persona própria (não é chatbot genérico) | ✅ **NEXO**, estrategista de performance, em `web/js/nexo.js` (fora do runtime) |
+| Consumo de tokens visível pro gestor | ✅ por chamada (trace), por turno (rodapé com tabela) e por sessão (medidor no topo), com custo em US$ quando o provedor devolve |
 | Bônus: roda sem key (modo simulado) | ✅ avaliador testa sem colar chave |
 
 ## Formulário
@@ -51,6 +53,14 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 - Protótipo: **streaming SSE real** no modo LLM. O texto aparece token a token enquanto o modelo
   gera; os `tool_calls` chegam fatiados e são remontados no transporte, então o loop inteiro é
   streamado sem chamada extra. No modo simulado continua o typewriter (não há LLM para streamar).
+- Protótipo: **persona NEXO**. O agente deixou de ser "assistente" e virou estrategista: conclusão
+  primeiro, fato separado de hipótese e de recomendação, opinião amarrada ao número, e discrepância
+  entre Meta e CRM exposta em vez de resolvida em silêncio. A persona vive em `web/js/nexo.js`,
+  separada do runtime, e o modo simulado segue a mesma régua (senão trocar de motor trocaria de agente).
+- Protótipo: **medidor de tokens**, por chamada, por turno e por sessão, com custo em US$ quando o
+  provedor devolve. ⚠️ O `usage` do streaming chega num chunk com `choices: []`, então o transporte
+  captura antes de descartar o chunk por falta de delta; sem isso o número sumiria sem erro nenhum.
+  `build/test_uso.js` cobre isso e mais 19 asserções, sem rede e sem chave.
 - Docs: `paper/GUIA-DO-PAPER.pdf` e `CHECKLIST.pdf` (versões em PDF, mais fáceis de ler).
 
 ## Opcionais que ficam de fora (não bloqueiam a entrega)

@@ -172,7 +172,7 @@
 
 <h2>4. Sistema</h2>
 <h3>4.1. O que o protótipo ilustra</h3>
-<p>Um chat web (estilo Cursor) roda o harness sobre um dataset mock da Housewhey. Cada turno mostra, num painel de <i>trace</i>, as fases do harness: hidratação do supercérebro (fase), depois as tool calls (com <i>badge</i> por camada: memória/api/app), com args e observação inspecionáveis, e a resposta ancorada nos números. Dois motores compartilham o mesmo trace: <b>(a) Simulado</b>, sem chave, um planejador roteirizado que executa as tools reais e compõe a resposta a partir do dado (prova que o dado sustenta a conclusão); <b>(b) LLM</b>, via OpenRouter, o loop ReAct de verdade decide as chamadas.</p>
+<p>Um chat web (estilo Cursor) roda o harness sobre um dataset mock da Housewhey, com um agente de persona própria (<b>NEXO</b>, estrategista de performance). A persona vive num arquivo separado do <i>runtime</i>, de propósito: o loop é mecanismo, a persona é dado do harness, e o mesmo runtime serve outra persona sem alteração de código. Cada turno mostra, num painel de <i>trace</i>, as fases do harness: hidratação do supercérebro (fase), depois as tool calls (com <i>badge</i> por camada: memória/api/app), com args e observação inspecionáveis, e a resposta ancorada nos números. Dois motores compartilham o mesmo trace: <b>(a) Simulado</b>, sem chave, um planejador roteirizado que executa as tools reais e compõe a resposta a partir do dado (prova que o dado sustenta a conclusão); <b>(b) LLM</b>, via OpenRouter, o loop ReAct de verdade decide as chamadas.</p>
 <p><b>Um turno concreto</b> (intent → memória/tools → observação → resposta), para <i>"o CPA do Ômega 3 subiu, diagnostique"</i>:</p>
 <ul>
   <li><b>Hidratação:</b> nós do grafo (campanha Ômega 3, time, tarefa de aprovação) + timeline recente entram no prompt.</li>
@@ -180,6 +180,8 @@
   <li><b>Observações combinadas:</b> o criativo de depoimento tem CPA R$ 2.100 contra R$ 100 do antes/depois, saturou e sozinho estourou o orçamento (R$ 6.200 vs R$ 5.000).</li>
   <li><b>Resposta:</b> causa raiz + próximo passo: pausar o depoimento resolve CPA, fadiga e verba de uma vez.</li>
 </ul>
+
+<p><b>Observabilidade inclui custo.</b> Um turno de agente não é uma chamada de LLM, são N: uma por passo do loop, e cada passo reenvia a conversa inteira mais as observações das tools. O protótipo mostra o consumo por chamada, por turno e por sessão. No turno de diagnóstico acima, a entrada das cinco chamadas sobe <b>2,9k → 3,8k → 10,4k → 10,7k → 11,3k</b> tokens, contra ~434 de saída no turno inteiro: o custo de um harness ReAct é dominado pelo <i>reenvio</i> de observação, não pela geração. (Esses números são a estimativa do modo simulado, que reconstrói o loop passo a passo; no modo LLM o mesmo painel mostra o <code>usage</code> medido pela API, e estimativa e medição nunca aparecem sem rótulo.) É o número que decide se uma tool deve devolver o JSON cru ou um resumo, e ele fica visível para quem opera, não só para quem desenvolve.</p>
 
 <h3>4.2. Datasets: o que é fake, o que dá para testar</h3>
 <p>Sete arquivos JSON (um cliente, cruzados: <code>ad_id = utm_content</code>, pessoas no grafo, timeline e WhatsApp). Cada arquivo é uma tool (Tabela 1). Tudo é fake, mas coerente ponta a ponta; <b>cinco problemas de gestão estão plantados e não rotulados</b>: CPA estourado, criativo saturado, origem declarada que mente contra o UTM, aprovação travada por <i>claim</i> proibido, e spend vs budget. O avaliador cola três prompts (relatório, diagnóstico, origem dos leads) e vê o harness orquestrar duas ou mais tools e chegar à conclusão sem que ela esteja escrita no dado.</p>
@@ -200,7 +202,7 @@
 <p>No painel <span class="kbd">Configurar</span>, o avaliador escolhe o motor (Simulado ou LLM), cola a <code>OPENROUTER_API_KEY</code> (guardada só em <code>sessionStorage</code>, nunca num servidor) e digita o id do modelo (dropdown com sugestões que suportam tool-calling; campo livre). Trocar de modelo é trocar o texto do campo. O modo Simulado dispensa chave e serve o avaliador que só quer ver o harness orquestrar.</p>
 
 <h2>5. Notas de execução</h2>
-<p>PDF anexo (este). Demo opcional: chat web estático, roda de <code>file://</code> por duplo clique ou de qualquer host, sem backend. LLM via OpenRouter, chave só na sessão do browser. Dados mock gerados de forma determinística a partir do <code>dataset_prompt</code>. O que é fake: todas as métricas e nomes. O que "parece real": o cruzamento e o trace, porque as tools leem o mesmo dado que a resposta cita, e o avaliador pode abrir cada passo.</p>
+<p>PDF anexo (este). Demo opcional: chat web estático, roda de <code>file://</code> por duplo clique ou de qualquer host, sem backend. LLM via OpenRouter, chave só na sessão do browser. Dados mock gerados de forma determinística a partir do <code>dataset_prompt</code>. Consumo de tokens medido pelo <code>usage</code> da própria API no modo LLM e estimado (sempre marcado com ≈) no simulado, onde não há LLM para medir. O que é fake: todas as métricas e nomes. O que "parece real": o cruzamento e o trace, porque as tools leem o mesmo dado que a resposta cita, e o avaliador pode abrir cada passo.</p>
 
 <h2>6. Limitações</h2>
 <p><b>Onde a solução quebra, por tarefa do gestor:</b></p>

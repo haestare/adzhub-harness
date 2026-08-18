@@ -3,22 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AdzHub · Harness Agêntico (demo)</title>
+  <title>NEXO · Harness Agêntico da AdzHub (demo)</title>
   <script>try{document.documentElement.dataset.theme=localStorage.getItem('az_theme')||'dark';}catch(e){}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%235b8cff%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-size=%2220%22 text-anchor=%22middle%22 fill=%22%230b0e14%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%235b8cff%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-size=%2220%22 text-anchor=%22middle%22 fill=%22%230b0e14%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3EN%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="logo">A</div>
-        <div>AdzHub <small>· harness agêntico · Housewhey</small></div>
+        <div class="logo">N</div>
+        <div>NEXO <small>· estrategista de performance · AdzHub × Housewhey</small></div>
       </div>
       <div class="spacer"></div>
+      <div class="meter" id="meter">
+        <button class="meter-btn" id="meterBtn" title="Consumo de tokens desta sessão">
+          <span class="meter-ico">⛽</span>
+          <span class="meter-n" id="meterN">0</span>
+          <span class="meter-lbl">tokens</span>
+        </button>
+        <div class="meter-panel" id="meterPanel"></div>
+      </div>
       <button class="btn icon" id="themeBtn" title="Alternar tema">☀️</button>
       <span class="pill" id="modePill">modo: simulado</span>
       <button class="btn" id="cfgBtn">⚙ Configurar</button>
@@ -31,7 +39,7 @@
         <div class="composer-wrap">
           <div class="chips" id="chips"></div>
           <div class="composer">
-            <textarea id="input" rows="1" placeholder="Peça uma tarefa: relatório de criativos, diagnóstico da conta, pauta da call…"></textarea>
+            <textarea id="input" rows="1" placeholder="Fale com o NEXO: cruzar Meta × CRM, diagnosticar um CPA, origem dos leads, pauta da call…"></textarea>
             <button class="btn primary" id="sendBtn">Enviar</button>
           </div>
         </div>
@@ -44,6 +52,7 @@
           <div class="row"><span class="badge memoria">memória</span><span><b>Supercérebro</b> (grafo + linha do tempo). Hidratado como <b>ambiente</b> antes do loop, não chamado às cegas.</span></div>
           <div class="row"><span class="badge api">api</span><span><b>APIs</b> (Meta, CRM). <b>Tools</b> que o agente chama no loop ReAct quando precisa de dado cru.</span></div>
           <div class="row"><span class="badge app">app</span><span><b>Apps</b> de metodologia. <b>Skills</b> encapsuladas; o harness chama o app, não reimplementa a metodologia.</span></div>
+          <div class="row"><span class="badge custo">custo</span><span><b>Tokens</b> por chamada. Um turno de agente são <b>N chamadas</b>, e cada uma reenvia a conversa mais as observações: por isso a entrada cresce passo a passo.</span></div>
         </div>
         <div class="cfg" id="cfg"></div>
         <h3>Trace da execução</h3>
@@ -88,6 +97,8 @@
 
   <script src="data.js"></script>
   <script src="js/tools.js"></script>
+  <script src="js/usage.js"></script>
+  <script src="js/nexo.js"></script>
   <script src="js/planner.js"></script>
   <script src="js/openrouter.js"></script>
   <script src="js/harness.js"></script>

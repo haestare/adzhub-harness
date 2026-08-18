@@ -9,7 +9,16 @@
    aqui antes de voltar ao loop. É isso que permite streamar o loop inteiro sem
    uma chamada extra só para a resposta final.
    Se o streaming falhar antes de produzir qualquer coisa, cai para a chamada
-   normal (não-streaming) e nada quebra. */
+   normal (não-streaming) e nada quebra.
+
+   CONTABILIDADE DE TOKENS: dois parâmetros pedem o consumo de volta.
+     · `usage: { include: true }` (extensão da OpenRouter) traz o custo em US$;
+     · `stream_options: { include_usage: true }` (padrão OpenAI) faz o usage vir
+       no ÚLTIMO chunk do SSE. ⚠️ Esse chunk chega com `choices: []`, então quem
+       lê o stream tem que pegar o `usage` ANTES de descartar o chunk por não ter
+       delta: era assim que o número sumia sem erro nenhum.
+   ⚠️ Se algum provedor recusar esses dois parâmetros (400), a chamada é refeita
+   UMA vez sem eles: melhor perder o medidor de tokens do que perder a resposta. */
 (function () {
   const AZ = (window.AZ = window.AZ || {});
   const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -37,24 +46,33 @@
     return `OpenRouter ${res.status}: ${detail || res.statusText}`;
   }
 
-  function post({ apiKey, model, messages, tools, stream }) {
-    return fetch(ENDPOINT, {
-      method: "POST",
-      headers: headers(apiKey),
-      body: JSON.stringify({
-        model, messages,
-        tools, tool_choice: tools && tools.length ? "auto" : undefined,
-        temperature: 0.2,
-        stream: stream || undefined,
-      }),
-    });
+  function post({ apiKey, model, messages, tools, stream, contabilidade }) {
+    const body = {
+      model, messages,
+      tools, tool_choice: tools && tools.length ? "auto" : undefined,
+      temperature: 0.2,
+      stream: stream || undefined,
+    };
+    if (contabilidade) {
+      body.usage = { include: true };                       // custo em US$ (OpenRouter)
+      if (stream) body.stream_options = { include_usage: true }; // usage no fim do SSE
+    }
+    return fetch(ENDPOINT, { method: "POST", headers: headers(apiKey), body: JSON.stringify(body) });
+  }
+
+  // manda com contabilidade e, se o provedor recusar (400), repete sem ela
+  async function postComFallback(opts) {
+    const res = await post(Object.assign({}, opts, { contabilidade: true }));
+    if (res.status !== 400) return { res, contabilizado: true };
+    const res2 = await post(Object.assign({}, opts, { contabilidade: false }));
+    return { res: res2, contabilizado: false };
   }
 
   // remonta a mensagem a partir dos deltas SSE
   async function readStream(res, onDelta) {
     const reader = res.body.getReader();
     const dec = new TextDecoder();
-    let buf = "", text = "";
+    let buf = "", text = "", usage = null;
     const calls = []; // por índice: { id, type, function: { name, arguments } }
     for (;;) {
       const { done, value } = await reader.read();
@@ -68,6 +86,7 @@
         const payload = t.slice(5).trim();
         if (payload === "[DONE]") continue;
         let json; try { json = JSON.parse(payload); } catch (_) { continue; }
+        if (json.usage) usage = json.usage;   // ⚠️ antes do descarte por falta de delta
         const delta = json.choices && json.choices[0] && json.choices[0].delta;
         if (!delta) continue;
         if (delta.content) { text += delta.content; onDelta(delta.content, text); }
@@ -81,7 +100,7 @@
       }
     }
     const tool_calls = calls.filter(Boolean);
-    return { role: "assistant", content: text, tool_calls: tool_calls.length ? tool_calls : null };
+    return { message: { role: "assistant", content: text, tool_calls: tool_calls.length ? tool_calls : null }, usage };
   }
 
   AZ.llm = {
@@ -91,11 +110,11 @@
 
       if (wantStream) {
         try {
-          const res = await post({ apiKey, model, messages, tools, stream: true });
+          const { res } = await postComFallback({ apiKey, model, messages, tools, stream: true });
           if (!res.ok) return { ok: false, error: await errorOf(res) };
           if (res.body) {
-            const message = await readStream(res, onDelta);
-            return { ok: true, message, streamed: true };
+            const { message, usage } = await readStream(res, onDelta);
+            return { ok: true, message, usage, streamed: true };
           }
         } catch (e) {
           // cai para o caminho normal abaixo (nada foi entregue ao usuário ainda)
@@ -103,7 +122,7 @@
       }
 
       let res;
-      try { res = await post({ apiKey, model, messages, tools, stream: false }); }
+      try { ({ res } = await postComFallback({ apiKey, model, messages, tools, stream: false })); }
       catch (e) { return { ok: false, error: "falha de rede: " + (e && e.message || e) }; }
       if (!res.ok) return { ok: false, error: await errorOf(res) };
       const data = await res.json();

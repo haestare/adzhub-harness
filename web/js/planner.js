@@ -2,10 +2,16 @@
    Nao e um LLM. E um planejador roteirizado que executa as MESMAS tools reais
    sobre o mock e compoe a resposta a partir dos numeros de verdade. Serve para o
    avaliador ver o harness orquestrar >=2 tools e aterrar a resposta no dado,
-   mesmo sem colar uma chave. Emite os mesmos steps de trace do modo LLM. */
+   mesmo sem colar uma chave. Emite os mesmos steps de trace do modo LLM.
+
+   O texto daqui segue a mesma regua do NEXO que o prompt de sistema impoe no
+   modo LLM (conclusao primeiro, FATO separado de HIPOTESE, tabela para dado
+   comparativo, opiniao amarrada ao numero), senao trocar de motor trocaria de
+   agente. */
 (function () {
   const AZ = (window.AZ = window.AZ || {});
-  const brl = (n) => "R$ " + Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  const brl = (n) => "R$ " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = (n) => Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%";
   const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
   function detectIntent(msg) {
@@ -54,19 +60,31 @@
     report(use) {
       const rows = joinReport(use);
       const worst = rows[0], best = rows[rows.length - 1];
+      const vezes = Math.round(worst.cpa / best.cpa);
+      const totalGasto = rows.reduce((s, r) => s + r.gasto, 0);
+      const totalVendas = rows.reduce((s, r) => s + r.vendas, 0);
+      const metaTotal = rows.reduce((s, r) => s + r.meta_conv, 0);
       const tb = table(
         ["Anúncio", "Gasto", "Vendas (CRM)", "CPA real", "Meta diz"],
         rows.map((r) => [r.ad, brl(r.gasto), String(r.vendas), r.vendas ? brl(r.cpa) : "sem venda", String(r.meta_conv)])
       );
       return [
-        "**Relatório de criativos × resultado real** (gasto do Meta ÷ venda real do CRM, por `utm_content`):",
-        "", tb, "",
-        `**Mais caro:** \`${worst.ad}\` a **${brl(worst.cpa)}** por venda (${worst.vendas} venda(s) sobre ${brl(worst.gasto)}).`,
-        `**Mais barato:** \`${best.ad}\` a **${brl(best.cpa)}** por venda.`,
+        `Olhei o cruzamento. **\`${worst.ad}\` é o seu problema de custo**: ${brl(worst.cpa)} por venda, **${vezes}× o CPA** do \`${best.ad}\`, que está em ${brl(best.cpa)}.`,
         "",
-        "Repare que o Gerenciador do Meta reporta bem mais conversões do que o CRM confirma como venda (atribuição view-through infla o número). Por isso o cruzamento com o CRM muda a leitura: o que parece bom no Meta é o mais caro na venda real.",
+        "**O que encontrei** (gasto do Meta ÷ venda real do CRM, ligados por `utm_content`):",
         "",
-        `**Próximo passo:** pausar \`${worst.ad}\` e realocar a verba para \`${best.ad}\`, que entrega venda a uma fração do custo.`,
+        tb,
+        "",
+        `**Por que isso importa:** o Meta atribui **${metaTotal} conversões** no total, o CRM confirma **${totalVendas} vendas**. Não são o mesmo número e a diferença não é pequena. Para decisão de verba eu uso o CRM, porque é onde a venda existe de verdade; a atribuição do Meta (view-through) eu trato como investigação separada.`,
+        "",
+        `Aqui está o ponto que mais me chamou atenção: \`${worst.ad}\` come **${pct(worst.gasto / totalGasto * 100)}** do investimento e devolve **${worst.vendas}** venda(s). Dentro do Gerenciador ele parece bom (${worst.meta_conv} conversões). No caixa, é o pior.`,
+        "",
+        "**O que eu faria, nessa ordem:**",
+        `1. Cortar \`${worst.ad}\`. Não é ajuste de lance, é sangria.`,
+        `2. Realocar essa verba para \`${best.ad}\`, que já provou que vende barato.`,
+        `3. Subir variações do \`${best.ad}\` para descobrir se o padrão dele se repete, antes de escalar forte.`,
+        "",
+        `**Próximo passo:** pausar \`${worst.ad}\` hoje e mover o orçamento dele para \`${best.ad}\`. As variações podem esperar a próxima janela de teste.`,
       ].join("\n");
     },
 
@@ -83,15 +101,30 @@
       const winner = rows.slice().sort((a, b) => a.cpa - b.cpa)[0];
       const s0 = ins.series_weekly[0], sN = ins.series_weekly[ins.series_weekly.length - 1];
       return [
-        "**Diagnóstico: CPA do Ômega 3 subindo.** Um único criativo explica quase tudo.",
+        "**O CPA não subiu na campanha. Subiu em um criativo, e ele está arrastando o resto.** É o `ad_omega3_depoimento`.",
         "",
-        `- **Saturação:** \`ad_omega3_depoimento\` teve o hook_rate cair de **${s0.hook_rate_pct}%** para **${sN.hook_rate_pct}%** enquanto a frequência subiu de **${s0.frequency}** para **${sN.frequency}** (mesmo público, criativo desgastado).`,
-        `- **Custo real:** ${brl(depo.gasto)} para **${depo.vendas} venda(s)** = **${brl(depo.cpa)}** por venda. O \`${winner.ad}\` faz o mesmo por **${brl(winner.cpa)}**.`,
-        `- **Verba:** a campanha gastou **${brl(spendOmega)}** contra orçamento de **${brl(budget)}** (${Math.round(spendOmega / budget * 100)}%), puxada por esse anúncio.`,
-        `- **App de análise de criativos** recomenda: **${rec}**.`,
+        "**O que encontrei**",
         "",
-        "**Causa raiz:** o depoimento saturou, virou o mais caro e ainda estourou o orçamento.",
-        `**Próximo passo (uma ação resolve três sintomas):** pausar \`ad_omega3_depoimento\`, realocar para \`${winner.ad}\` e subir uma variação nova de gancho. Isso corrige CPA, fadiga e estouro de verba de uma vez.`,
+        table(
+          ["Sinal", "Antes", "Agora", "Leitura"],
+          [
+            ["Hook rate", s0.hook_rate_pct + "%", sN.hook_rate_pct + "%", "queda de " + (s0.hook_rate_pct - sN.hook_rate_pct) + " pp"],
+            ["Frequência", String(s0.frequency), String(sN.frequency), "mesmo público, mais repetição"],
+            ["CPA real (CRM)", "—", brl(depo.cpa), depo.vendas + " venda(s) sobre " + brl(depo.gasto)],
+            ["Verba da campanha", brl(budget), brl(spendOmega), pct(spendOmega / budget * 100) + " do teto"],
+          ]
+        ),
+        "",
+        `O App de análise de criativos, com a metodologia da casa, chega no mesmo lugar: **${rec}**.`,
+        "",
+        `**Por que isso importa:** o \`${winner.ad}\` entrega venda a ${brl(winner.cpa)}. O depoimento cobra ${brl(depo.cpa)} pela mesma coisa. Enquanto ele fica no ar, cada real que entra na campanha compra venda pelo pior preço da conta e ainda empurra o gasto acima do orçamento do mês.`,
+        "",
+        "**Causa raiz (isso está claro nos dados):** o criativo saturou. Gancho caindo com frequência subindo é fadiga de público, não problema de segmentação.",
+        "",
+        "**O que eu faria**",
+        `Eu não mexeria na segmentação ainda, e nem no lance. Uma ação resolve os três sintomas: pausar \`ad_omega3_depoimento\`. Cai o CPA médio, para a fadiga, e o pacing volta pra dentro do teto.`,
+        "",
+        `**Próximo passo:** pausar o depoimento, mover a verba pro \`${winner.ad}\`, e colocar uma variação nova de gancho na fila de produção. A variação é teste, não é a correção: a correção é a pausa.`,
       ].join("\n");
     },
 
@@ -105,15 +138,28 @@
       declaramMasMeta.forEach((l) => { porAd[l.utm_content] = (porAd[l.utm_content] || 0) + 1; });
       const culpado = Object.entries(porAd).sort((a, b) => b[1] - a[1])[0];
       return [
-        "**Origem inconsistente: a atribuição declarada mente.**",
+        "**Antes de qualquer decisão de verba: esses leads não são do Google.** O que eles dizem no atendimento e o que o UTM registra são coisas diferentes, e aqui a diferença é quase total.",
         "",
-        `- **${declaram.length} leads** dizem no atendimento que vieram do **Google**.`,
-        `- Mas só **${realGoogle.length} leads** têm UTM real de Google. Os outros **${declaramMasMeta.length}** carregam UTM do **Meta**.`,
-        `- Desses, **${culpado[1]}** vieram do anúncio \`${culpado[0]}\` (um vídeo UGC no Instagram, que a pessoa lembra como "achei na internet/Google").`,
+        "**O que encontrei**",
         "",
-        "A conversa da Luiza no WhatsApp já apontava isso: leads dizendo Google, mas a conta quase não roda Google.",
+        table(
+          ["Recorte", "Leads", "Leitura"],
+          [
+            ["Dizem que vieram do Google", String(declaram.length), "origem declarada, no atendimento"],
+            ["Têm UTM real de Google", String(realGoogle.length), "origem rastreada"],
+            ["Dizem Google, mas o UTM é Meta", String(declaramMasMeta.length), "aqui está o problema"],
+            ["Concentrados em `" + culpado[0] + "`", String(culpado[1]), "um vídeo UGC no Instagram"],
+          ]
+        ),
         "",
-        "**Próximo passo:** decidir verba pelo UTM, não pela origem declarada. Migrar investimento para o Google aqui seria um erro: o canal que traz esses leads é o Meta. Vale, sim, corrigir a pergunta de atendimento (ex.: 'viu um vídeo? em qual rede?') para parar de sujar a atribuição.",
+        `**FATO:** ${declaramMasMeta.length} leads carregam UTM do Meta e declararam Google. **HIPÓTESE:** a pessoa vê o vídeo no Instagram, procura a marca depois e lembra do caminho como "achei na internet". É o padrão clássico de vídeo que gera busca de marca, e a conversa da Luiza no WhatsApp já tinha levantado isso.`,
+        "",
+        "**Por que isso importa:** se a verba seguir a origem declarada, você tira dinheiro do canal que está trazendo o lead e coloca num canal que quase não roda. O erro não seria pequeno, seria invertido.",
+        "",
+        "**O que eu faria**",
+        "Decidir verba por UTM, sempre. Origem declarada serve para entender comportamento, nunca para alocar investimento.",
+        "",
+        `**Próximo passo:** manter (ou reforçar) o \`${culpado[0]}\`, e trocar a pergunta do atendimento de "como nos conheceu?" para algo que separe canal de lembrança, tipo "viu um vídeo nosso? em qual rede?". Isso para de sujar a atribuição na entrada.`,
       ].join("\n");
     },
 
@@ -121,17 +167,21 @@
       use("get_timeline", {});
       use("search_conversations", {});
       const rows = joinReport(use);
-      const worst = rows[0];
+      const worst = rows[0], best = rows[rows.length - 1];
       return [
-        "**Pauta sugerida · call Housewhey**",
+        "**Pauta da call · Housewhey.** Montei na ordem do que dói mais, não na ordem cronológica. Se a call cair pela metade, os dois primeiros pontos são os que não podem ficar de fora.",
         "",
-        "1. **Resultado real dos criativos.** Relatório gasto × venda por anúncio. Destaque: o depoimento de Ômega 3 está a " + brl(worst.cpa) + " por venda.",
-        "2. **Decisão de realocação.** Pausar o criativo saturado e reforçar o antes/depois (o mais eficiente da conta).",
-        "3. **Destravar Creatina.** A peça está parada em aprovação por causa da frase 'resultado garantido'. Levar a versão corrigida para o Rodrigo liberar.",
-        "4. **Atribuição.** Alinhar que os leads 'do Google' são, na verdade, do Meta (UGC de Whey), e ajustar a pergunta de origem no atendimento.",
-        "5. **Orçamento.** Ômega 3 passou do teto do mês; revisar o pacing.",
+        `**1. A decisão do dia: pausar o \`${worst.ad}\`.** ${brl(worst.cpa)} por venda contra ${brl(best.cpa)} do \`${best.ad}\`. Levar a tabela do cruzamento Meta × CRM; é ela que sustenta a decisão.`,
         "",
-        "Base: linha do tempo recente da conta + atas de reunião e WhatsApp.",
+        `**2. Destravar a peça de Creatina.** Está parada em aprovação por causa de um claim proibido, não por fila. Levar a versão corrigida pronta para o Rodrigo liberar na hora, senão a call vira mais uma rodada de "vou olhar".`,
+        "",
+        "**3. Alinhar atribuição.** Os leads \"do Google\" são do Meta. Isso muda como eles leem o relatório deles, então vale explicar antes que alguém peça verba pro Google.",
+        "",
+        "**4. Pacing do Ômega 3.** A campanha passou do teto do mês. Ponto de gestão, não de crise, e a pausa do item 1 já corrige boa parte.",
+        "",
+        `**5. Próximo teste.** Variações do \`${best.ad}\`, para descobrir se o padrão dele se repete antes de escalar de verdade. Eu trataria como teste, não como plano de crescimento ainda.`,
+        "",
+        "Base: linha do tempo da conta, atas e WhatsApp, mais o cruzamento de mídia com CRM.",
       ].join("\n");
     },
 
@@ -141,16 +191,21 @@
       const pausar = app.ranking.filter((r) => r.recomendacao === "pausar").map((r) => r.ad_id);
       const variar = app.ranking.filter((r) => r.recomendacao === "variar")[0];
       return [
-        "**Análise de criativos + novo briefing.**",
+        `**Tem um criativo pra cortar e um pra escalar com teste**, e a ordem importa: cortar primeiro libera a verba que o teste vai usar.`,
         "",
-        `- **Pausar:** ${pausar.map((x) => "`" + x + "`").join(", ")} (gancho despencou / saturado).`,
-        `- **Variar (escalar com teste):** \`${variar.ad_id}\` · ${variar.racional}`,
-        variar.brief_sugerido ? `  - Brief: público *${variar.brief_sugerido.publico}*, hook *${variar.brief_sugerido.hook}*, CTA *${variar.brief_sugerido.cta}*.` : "",
+        `**Pausar:** ${pausar.map((x) => "`" + x + "`").join(", ")}. Gancho despencou com frequência subindo, que é saturação e não sazonalidade.`,
         "",
-        "**Restrições da marca (mapa de solução) que a copy tem que respeitar:**",
+        `**Variar (escalar com teste):** \`${variar.ad_id}\`. ${variar.racional}`,
+        variar.brief_sugerido
+          ? `Brief que eu levaria pra produção: público **${variar.brief_sugerido.publico}**, hook **${variar.brief_sugerido.hook}**, CTA **${variar.brief_sugerido.cta}**.`
+          : "",
+        "",
+        "**Antes de escrever qualquer copy**, o mapa de solução da marca barra estas frases:",
         ...mapa.nao_pode_falar.map((x) => "- " + x),
         "",
-        "É por isso que a peça de Creatina está travada: ela usa 'resultado garantido', que entra na lista do que não pode falar.",
+        "É exatamente por isso que a peça de Creatina está travada em aprovação: ela usa \"resultado garantido\", que está na lista. Não é implicância do cliente, é risco de compliance dele.",
+        "",
+        `**Próximo passo:** pausar os saturados, subir duas variações do \`${variar.ad_id}\` com o brief acima, e reescrever a peça de Creatina sem o claim. Eu não consideraria o \`${variar.ad_id}\` um vencedor confirmado até ver as variações rodando com volume de venda parecido.`,
       ].join("\n");
     },
 
@@ -158,12 +213,18 @@
       const ctx = use("search_client_context", { query: "" });
       const ads = use("list_ads", {}).ads;
       const pessoas = ctx.nodes.filter((n) => n.type === "person").map((n) => n.label + " (" + (n.props.role || "") + ")");
+      const ativos = ads.filter((a) => a.status === "active").length;
       return [
-        "Sou o agente da conta **Housewhey** (operação SPOT). Posso cruzar Meta × CRM, diagnosticar a conta, montar pauta e analisar criativos.",
+        "Sou o **NEXO**, estrategista de performance da conta **Housewhey** (operação SPOT). Já estou com o contexto da conta carregado.",
         "",
-        `Time: ${pessoas.join(", ")}. Anúncios ativos: ${ads.filter((a) => a.status === "active").length}.`,
+        `Time: ${pessoas.join(", ")}. Anúncios ativos agora: **${ativos}**.`,
         "",
-        "Experimente: *relatório de criativos × resultado real*, *o CPA do Ômega 3 subiu, diagnostique*, ou *por que os leads dizem que vieram do Google?*",
+        "Me dá uma tarefa de verdade e eu puxo o dado antes de opinar. As que eu faria primeiro, se fosse minha escolha:",
+        "",
+        "- **Cruzar Meta × CRM por criativo.** É onde mora a diferença entre o que parece bom e o que vende.",
+        "- **Diagnosticar o CPA do Ômega 3**, que subiu.",
+        "- **Entender a origem dos leads**, porque o que eles declaram não está batendo com o UTM.",
+        "- **Montar a pauta da próxima call**, já priorizada.",
       ].join("\n");
     },
   };

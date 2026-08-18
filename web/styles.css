@@ -15,6 +15,7 @@
   --mem: #b18bff;   --mem-bg: #241a3d;
   --app: #35c98a;   --app-bg: #13301f;
   --warn: #ffb454;  --phase-bg: #33260f;
+  --tok: #ffb454;   --tok-bg: #33260f;
   --danger: #ff6b6b;
   --th-bg: #1c2433;
   --code-bg: #0c111b; --code-fg: #cdd6ea;
@@ -48,6 +49,7 @@
   --mem: #7a52d6;   --mem-bg: #efe9fb;
   --app: #159a63;   --app-bg: #e2f5ec;
   --warn: #b5730a;  --phase-bg: #fdeecb;
+  --tok: #b5730a;   --tok-bg: #fdeecb;
   --danger: #d64545;
   --th-bg: #eef1f6;
   --code-bg: #eef1f6; --code-fg: #26324a;
@@ -238,6 +240,65 @@ table.fb-table { border-collapse: collapse; width: 100%; min-width: max-content;
 
 .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -2px; }
 @keyframes sp { to { transform: rotate(360deg); } }
+
+
+/* ---- medidor de tokens (topbar) --------------------------------------------
+   Vive no topo porque consumo é estado da sessão, não de uma resposta: quem
+   opera precisa ver o acumulado sem abrir nada. O detalhamento fica no clique. */
+.meter { position: relative; }
+.meter-btn {
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--line); color: var(--txt-dim);
+  border-radius: 20px; padding: 5px 12px; font-family: var(--sans); font-size: 12px;
+  transition: border-color .15s, color .15s;
+}
+.meter-btn:hover { border-color: var(--tok); color: var(--txt); }
+.meter.on .meter-btn { border-color: var(--tok); color: var(--txt); }
+.meter-ico { font-size: 11px; filter: saturate(.9); }
+.meter-n { font-family: var(--mono); font-weight: 700; color: var(--tok); font-variant-numeric: tabular-nums; }
+.meter-lbl { color: var(--txt-faint); }
+.meter-panel {
+  display: none; position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;
+  width: 268px; background: var(--panel); border: 1px solid var(--line-2);
+  border-radius: 12px; padding: 13px 14px; box-shadow: 0 14px 40px var(--overlay);
+  animation: modalIn .2s var(--spring) both;
+}
+.meter.on .meter-panel { display: block; }
+.mp-h { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--txt-faint); margin-bottom: 10px; }
+.mp-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: var(--txt-dim); margin-top: 9px; }
+.mp-row b { font-family: var(--mono); color: var(--tok); font-size: 13px; }
+.mp-sub { font-size: 11px; color: var(--txt-faint); font-family: var(--mono); margin-top: 2px; }
+.mp-nota { font-size: 11px; color: var(--txt-faint); line-height: 1.5; margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--line); }
+.mp-zerar { width: 100%; margin-top: 10px; font-size: 12px; padding: 6px 10px; }
+
+/* ---- consumo do turno (rodapé da resposta) --------------------------------- */
+.uso-box { margin-top: 10px; }
+.uso-box summary {
+  cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  font-size: 11.5px; color: var(--txt-faint); font-family: var(--mono);
+  padding: 5px 10px; border: 1px dashed var(--line-2); border-radius: 8px; transition: border-color .15s;
+}
+.uso-box summary::-webkit-details-marker { display: none; }
+.uso-box summary:hover { border-color: var(--tok); }
+.uso-tot { color: var(--tok); font-weight: 700; }
+.uso-sep { position: relative; }
+.uso-sep::before { content: "·"; position: absolute; left: -6px; color: var(--line-2); }
+.uso-tag { margin-left: auto; text-transform: uppercase; letter-spacing: .4px; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: var(--tok-bg); color: var(--tok); }
+.uso-tag.medido { background: var(--app-bg); color: var(--app); }
+.uso-det { margin-top: 8px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; }
+.uso-tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.uso-tbl th { text-align: left; font-weight: 600; color: var(--txt-faint); padding: 3px 6px; border-bottom: 1px solid var(--line); font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; }
+.uso-tbl td { padding: 4px 6px; color: var(--txt-dim); font-family: var(--mono); }
+.uso-tbl th.num, .uso-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.uso-tbl tbody tr:last-child td { color: var(--txt); }
+.uso-nota { font-size: 11px; color: var(--txt-faint); line-height: 1.55; margin: 9px 0 0; }
+.uso-nota code { font-family: var(--mono); font-size: 10.5px; }
+
+/* ---- passo de custo no trace ----------------------------------------------- */
+.step.uso .head { padding: 7px 11px; }
+.step.uso .name { font-family: var(--sans); font-size: 12px; color: var(--txt-dim); }
+.step.uso .lbl { font-family: var(--mono); color: var(--tok); font-size: 11px; }
+.badge.custo { color: var(--tok); background: var(--tok-bg); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }

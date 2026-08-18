@@ -7,7 +7,15 @@
      3) APPS COMO SKILLS       -> tools também, mas de metodologia encapsulada; o harness
         chama o app, não reimplementa a metodologia no prompt.
    Guard-rails de harness (não de chatbot): allowlist de tools, max_steps, validação
-   de args, e todo passo observável no trace. */
+   de args, e todo passo observável no trace.
+
+   A PERSONA (NEXO) mora em nexo.js, fora daqui: este arquivo é mecanismo, ela é
+   dado. O harness só a concatena com o contexto hidratado.
+
+   CUSTO: cada passo do loop é uma chamada de LLM que reenvia a conversa inteira
+   mais as observações das tools, então a entrada CRESCE a cada passo. O medidor
+   registra chamada por chamada (usage real da API no modo LLM, estimativa
+   marcada com ≈ no modo simulado) e devolve os totais do turno junto da resposta. */
 (function () {
   const AZ = (window.AZ = window.AZ || {});
 
@@ -34,46 +42,49 @@
     emit({
       type: "phase", key: "hydrate",
       title: "Hidratando contexto do supercérebro",
-      detail: `${ctx.nodes.length} nós do grafo + ${tl.events.length} eventos da timeline injetados no prompt (antes do loop).`,
+      detail: `${ctx.nodes.length} nós do grafo + ${tl.events.length} eventos da timeline injetados no prompt (antes do loop). Custo: ~${AZ.tokens.fmt(AZ.tokens.estimar(pack))} tokens em TODA chamada do turno.`,
       pack,
     });
     return pack;
   }
 
-  function systemPrompt(pack) {
-    return [
-      "Você é um agente de marketing da AdzHub operando a conta da Housewhey (operação SPOT).",
-      "Resolva a tarefa do gestor CRUZANDO dados reais das tools, não dando palpite.",
-      "Regras:",
-      "1) Toda métrica vem de uma tool; nunca invente número.",
-      "2) Gasto por anúncio está no Meta (list_ads / get_ad_insights). Venda REAL está no CRM (get_leads), ligada por utm_content = ad_id. Para custo por venda, cruze os dois.",
-      "3) Metodologia de criativo vem do App (run_app_analise_criativos); não reinvente. Antes de propor copy/CTA, consulte get_mapa_solucao (o que a marca não pode falar).",
-      "4) O contexto da conta (quem/o quê/quando) já foi hidratado abaixo. Aprofunde com search_client_context / get_timeline / search_conversations quando precisar do PORQUÊ (ex.: aprovação travada).",
-      "5) Responda em português, direto: causa + números + próximo passo acionável. Seja conciso.",
-      "6) FORMATO: sempre que comparar itens com métricas (gasto, conversões, CPA, cliques por anúncio/criativo/campanha), use uma TABELA markdown (uma linha por item, uma coluna por métrica). NUNCA use listas aninhadas para dados tabulares. Reserve texto corrido e bullets só para causa, contexto e recomendação.",
-      "",
-      "CONTEXTO HIDRATADO (supercérebro):",
-      pack,
-    ].join("\n");
-  }
+  const systemPrompt = (pack) => AZ.NEXO.system(pack);
 
   // ---- 2/3. loop ReAct com tools (APIs) e skills (Apps) ---------------------
-  async function llmLoop({ message, apiKey, model, pack, emit, onDelta }) {
+  async function llmLoop({ message, apiKey, model, pack, emit, onDelta, medidor }) {
     const messages = [
       { role: "system", content: systemPrompt(pack) },
       { role: "user", content: message },
     ];
     const allow = new Set(AZ.HARNESS_CONFIG.allowlist);
+
+    // registra o custo de UMA chamada de LLM: usage real quando a API devolve,
+    // estimativa marcada quando o provedor não contabiliza.
+    const contabilizar = (r, msgs, tools, passo) => {
+      let u = AZ.tokens.daApi(r && r.usage);
+      if (!u) {
+        const saida = AZ.tokens.estimar((r && r.message && r.message.content) || "") +
+          AZ.tokens.estimar(JSON.stringify((r && r.message && r.message.tool_calls) || ""));
+        const entrada = AZ.tokens.estimarEntrada(msgs, tools);
+        u = { entrada, saida, total: entrada + saida, custo: 0, estimado: true };
+      }
+      medidor.registrar(u);
+      emit({ type: "uso", passo, uso: u, modelo: model });
+      return u;
+    };
+
     for (let step = 1; step <= AZ.HARNESS_CONFIG.maxSteps; step++) {
       // o texto que chega em stream é escrito na tela ao vivo; se no fim vier
       // tool_calls junto, aquilo era raciocínio e a tela descarta (ver app.js).
+      const enviadas = messages.slice();
       const r = await AZ.llm.chat({ apiKey, model, messages, tools: AZ.toolSpecs, onDelta });
-      if (!r.ok) { emit({ type: "error", text: r.error }); return { answer: null, error: r.error }; }
+      if (!r.ok) { emit({ type: "error", text: r.error }); return { answer: null, error: r.error, uso: medidor.totais() }; }
+      contabilizar(r, enviadas, AZ.toolSpecs, step);
       const msg = r.message;
       const calls = msg.tool_calls || [];
       if (!calls.length) {
         emit({ type: "final", text: msg.content || "(sem conteúdo)" });
-        return { answer: msg.content || "" };
+        return { answer: msg.content || "", uso: medidor.totais() };
       }
       if (msg.content) emit({ type: "thinking", text: msg.content });
       messages.push({ role: "assistant", content: msg.content || "", tool_calls: calls });
@@ -85,29 +96,68 @@
         if (!allow.has(name)) result = { ok: false, error: `tool '${name}' fora da allowlist` };
         else result = AZ.callTool(name, args);
         const meta = AZ.toolMeta[name] || { layer: "api", label: name };
-        emit({ type: "tool", name, layer: meta.layer, label: meta.label, args, result });
-        messages.push({ role: "tool", tool_call_id: tc.id, name, content: JSON.stringify(result) });
+        const bruto = JSON.stringify(result);
+        emit({ type: "tool", name, layer: meta.layer, label: meta.label, args, result, tokens: AZ.tokens.estimar(bruto) });
+        messages.push({ role: "tool", tool_call_id: tc.id, name, content: bruto });
       }
     }
     // atingiu max_steps: pede fechamento sem mais tools
-    const r = await AZ.llm.chat({ apiKey, model, messages: messages.concat([{ role: "user", content: "Feche com a melhor resposta possível a partir do que já coletou." }]), tools: [], onDelta });
+    const fecha = messages.concat([{ role: "user", content: "Feche com a melhor resposta possível a partir do que já coletou." }]);
+    const r = await AZ.llm.chat({ apiKey, model, messages: fecha, tools: [], onDelta });
+    if (r.ok) contabilizar(r, fecha, [], "fecho");
     const text = r.ok ? (r.message.content || "") : (r.error || "");
     emit({ type: r.ok ? "final" : "error", text });
-    return { answer: r.ok ? text : null, error: r.ok ? null : text };
+    return { answer: r.ok ? text : null, error: r.ok ? null : text, uso: medidor.totais() };
+  }
+
+  /* ---- custo do modo simulado -------------------------------------------
+     Aqui NÃO existe LLM, então nada é medido: o que sai é o que este mesmo
+     turno CUSTARIA, reconstruído do jeito que o loop real gasta. Uma chamada
+     por tool observada mais a de fechamento, e cada uma reenviando tudo que
+     veio antes, que é a razão de a entrada crescer passo a passo. */
+  function estimarTurnoSimulado({ pack, message, chamadas, answer, emit, medidor }) {
+    const msgs = [
+      { role: "system", content: systemPrompt(pack) },
+      { role: "user", content: message },
+    ];
+    const specs = AZ.toolSpecs;
+    chamadas.forEach((c, i) => {
+      const entrada = AZ.tokens.estimarEntrada(msgs, specs);
+      const pedido = JSON.stringify({ name: c.name, arguments: c.args || {} });
+      const saida = AZ.tokens.estimar(pedido);
+      const u = { entrada, saida, total: entrada + saida, custo: 0, estimado: true };
+      medidor.registrar(u);
+      emit({ type: "uso", passo: i + 1, uso: u, modelo: "—" });
+      msgs.push({ role: "assistant", content: "", tool_calls: [{ function: { name: c.name, arguments: pedido } }] });
+      msgs.push({ role: "tool", content: JSON.stringify(c.result) });
+    });
+    const entrada = AZ.tokens.estimarEntrada(msgs, specs);
+    const saida = AZ.tokens.estimar(answer);
+    const u = { entrada, saida, total: entrada + saida, custo: 0, estimado: true };
+    medidor.registrar(u);
+    emit({ type: "uso", passo: chamadas.length + 1, uso: u, modelo: "—" });
+    return medidor.totais();
   }
 
   // ---- orquestrador ---------------------------------------------------------
   AZ.Harness = {
     async run({ message, mode, apiKey, model, emit, onDelta }) {
       emit = emit || (() => {});
+      const medidor = AZ.tokens.medidor();
       const pack = hydrate(message, emit); // memória sempre hidratada (ambiente)
       if (mode === "llm") {
-        return await llmLoop({ message, apiKey, model, pack, emit, onDelta });
+        return await llmLoop({ message, apiKey, model, pack, emit, onDelta, medidor });
       }
       // modo simulado: planner roteirizado executando as tools reais
-      const { answer, intent } = AZ.planner.run(message, emit);
+      const chamadas = [];
+      const espiao = (s) => {
+        if (s.type === "tool") { chamadas.push(s); s.tokens = AZ.tokens.estimar(JSON.stringify(s.result)); }
+        emit(s);
+      };
+      const { answer, intent } = AZ.planner.run(message, espiao);
+      const uso = estimarTurnoSimulado({ pack, message, chamadas, answer, emit, medidor });
       emit({ type: "final", text: answer, intent });
-      return { answer };
+      return { answer, uso };
     },
   };
 })();

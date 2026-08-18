@@ -73,7 +73,7 @@
 <h2>1. Introdução</h2>
 <p>O produto-alvo é um chat agêntico (no espírito do Cursor, mas para marketing): o gestor descreve uma tarefa e o agente orquestra contexto, Apps e APIs até uma ação útil. Antes de desenhar, separo dois conceitos que se confundem. O <b>modelo</b> é o LLM: prevê o próximo token e, no máximo, emite a intenção de chamar uma função. O <b>harness</b> é o runtime em volta: o loop que executa a chamada, injeta a observação de volta, guarda estado, impõe limites (allowlist de tools, teto de passos) e decide o que entra no contexto. Trocar de modelo troca o raciocínio; trocar de harness troca o que o agente consegue fazer com aquele raciocínio.</p>
 <p>Uma imagem fixa a distinção. O LLM é um cérebro num pote: sabe muito, mas não vê o mundo nem age. O harness é o exoesqueleto que pluga esse cérebro na operação. O exoesqueleto restringe o foco (em vez de deixar o cérebro divagar, prende ele nos passos daquela tarefa), provê os músculos e as ferramentas (tools, memória, dados da conta) e força a saída num comportamento estrito. E faz isso <i>sem tocar no cérebro</i>: não mexemos nos pesos do modelo (isso seria treino), apenas embrulhamos software em volta e filtramos o que o LLM vê. Mesmo cérebro, exoesqueletos diferentes, agentes diferentes.</p>
-<p>No início do estudo eu tratava harness como sinônimo de "loop de tool-calling": ligar o modelo a um punhado de funções e deixar rodar. Estudando os tipos de referência (ReAct [2], sandbox/CodeAct [3], sessão com permissões e skills, orquestração por grafo, contexto como ambiente) e o SDK do OpenHands [1], o que mudou foi entender que a decisão de arquitetura não é "qual loop", e sim <b>como cada recurso do domínio entra no runtime</b>: o que vira tool, o que vira memória e o que vira unidade de trabalho encapsulada. Um bom harness é, antes de tudo, uma política de contexto.</p>
+<p>No início do estudo eu tratava harness como sinônimo de "loop de tool-calling": ligar o modelo a um punhado de funções e deixar rodar. Estudando os tipos de referência (ReAct [2], sandbox/CodeAct [3], sessão com permissões e skills, orquestração por grafo, contexto como ambiente [4]) e o SDK do OpenHands [1], o que mudou foi entender que a decisão de arquitetura não é "qual loop", e sim <b>como cada recurso do domínio entra no runtime</b>: o que vira tool, o que vira memória e o que vira unidade de trabalho encapsulada. Um bom harness é, antes de tudo, uma política de contexto.</p>
 <p><b>Tese.</b> Para este domínio, um harness que trata suas três camadas com o mesmo mecanismo (tudo tool) é caro e frágil; defendo um híbrido em que <i>memória é ambiente, API é tool e App é skill</i>. As seções §2 a §6 definem o vocabulário, justificam a escolha contra as alternativas, mostram o que o protótipo ilustra e onde a solução quebra.</p>
 
 <h2>2. Preliminares</h2>
@@ -87,7 +87,7 @@
   <li><b>estado:</b> o que sobrevive entre passos (mensagens, resultados, escolhas) e, num produto, entre turnos.</li>
 </ul>
 <h3>2.2. O domínio AdzHub (como eu o leio)</h3>
-<p>A página do desafio expõe três camadas. <b>(i) Supercérebro:</b> a memória da operação, pessoas, cliente, campanhas e decisões ligadas em grafo, com linha do tempo (contexto temporal). <b>(ii) Apps:</b> metodologias empacotadas (insight da semana, brief de criativo, diagnóstico, análise de criativos, mapa de solução). <b>(iii) APIs:</b> os dados da operação (Meta, Google, Analytics, CRM, WhatsApp). A observação central deste paper: essas três camadas têm <i>naturezas</i> diferentes, e o harness rende mais quando respeita essa diferença em vez de achatar tudo em "função que o LLM chama".</p>
+<p>A página do desafio expõe três camadas. <b>(i) Supercérebro:</b> a memória da operação, pessoas, cliente, campanhas e decisões ligadas em grafo (GraphRAG), com linha do tempo (contexto temporal). <b>(ii) Apps:</b> metodologias empacotadas (insight da semana, brief de criativo, diagnóstico, análise de criativos, mapa de solução). <b>(iii) APIs:</b> os dados da operação (Meta, Google, Analytics, CRM, WhatsApp). A observação central deste paper: essas três camadas têm <i>naturezas</i> diferentes, e o harness rende mais quando respeita essa diferença em vez de achatar tudo em "função que o LLM chama".</p>
 
 <h2>3. Arquitetura</h2>
 <h3>3.1. A escolha: um híbrido de três mecanismos</h3>
@@ -97,7 +97,7 @@
   <li><b>Sandbox / CodeAct</b> (o agente escreve e executa código [3]): poderoso para engenharia, mas aqui o trabalho não é rodar código arbitrário, é cruzar fontes tabulares e aplicar metodologia. O sandbox soma superfície de risco (execução) e latência sem resolver o problema do gestor. Fica fora do MVP; volta, no máximo, como uma tool isolada de cálculo (§6).</li>
   <li><b>Sessão com permissões e skills:</b> a parte de <i>skills</i> eu adoto (os Apps são exatamente isso). A parte de <i>permissões</i> eu adio de propósito, porque o MVP é só-leitura (§3.3). Uso metade dessa referência, conscientemente.</li>
   <li><b>Orquestração por grafo</b> (estados): ótima quando o fluxo é conhecido e repetível (um pipeline fixo). O chat do gestor é o oposto: aberto, uma tarefa diferente por mensagem. Um grafo de controle rígido engessaria. Nota: o supercérebro é um grafo de <i>dados</i>, não de <i>controle</i>. Uso o grafo como memória, não como máquina de estados.</li>
-  <li><b>Contexto como ambiente (RLM):</b> é a peça que cura a fraqueza do ReAct puro. Trato o supercérebro como ambiente: o harness recupera um pacote de contexto (nós relevantes do grafo + eventos recentes da timeline) e o injeta no prompt antes do loop. O modelo já começa situado.</li>
+  <li><b>Contexto como ambiente (RLM [4]):</b> é a peça que cura a fraqueza do ReAct puro. Trato o supercérebro como ambiente: o harness recupera um pacote de contexto (nós relevantes do grafo + eventos recentes da timeline) e o injeta no prompt antes do loop. O modelo já começa situado.</li>
 </ul>
 <p>O híbrido, então: <b>RLM para a memória, ReAct para as APIs, skills para os Apps.</b> Nenhuma referência sozinha cobre as três naturezas; a tese está na composição.</p>
 
@@ -211,7 +211,7 @@
   <li><b>Criativos:</b> o App recomenda pausar/variar, mas o <i>brief</i> novo é gerado pelo LLM; sem o mapa de solução no contexto, ele pode propor copy que a marca não pode falar. Mitigo injetando <code>get_mapa_solucao</code>, mas não garanto.</li>
 </ul>
 <p>Além disso: só-leitura por escolha (não fecho o loop de execução); um cliente só (sem multi-tenant nem auth); memória mock, o grafo temporal de verdade (resolução de entidade, invalidação, decaimento) é o trabalho pesado que fica de fora.</p>
-<p><b>Com mais uma semana</b> eu construiria: (a) recuperação de memória de verdade, um grafo temporal com embeddings e decaimento (no espírito de Graphiti/Zep [4]), para a hidratação parar de depender de match por substring; (b) uma tool isolada de verificação numérica, o único lugar onde um mini-sandbox se paga, para o join Meta×CRM ficar auditável; (c) confirmação de escrita (pausar anúncio) com o humano no meio. <b>O que eu deliberadamente não construiria:</b> um grafo de controle por cima do chat (mata a abertura da tarefa), execução de código arbitrário no MVP (risco sem retorno) e memória de longo prazo que aprende sozinha sem revisão, porque num domínio com o dinheiro do cliente, contexto errado propaga erro.</p>
+<p><b>Com mais uma semana</b> eu construiria: (a) recuperação de memória de verdade, um grafo temporal com embeddings e decaimento (no espírito de Graphiti/Zep [5]), para a hidratação parar de depender de match por substring; (b) uma tool isolada de verificação numérica, o único lugar onde um mini-sandbox se paga, para o join Meta×CRM ficar auditável; (c) confirmação de escrita (pausar anúncio) com o humano no meio. <b>O que eu deliberadamente não construiria:</b> um grafo de controle por cima do chat (mata a abertura da tarefa), execução de código arbitrário no MVP (risco sem retorno) e memória de longo prazo que aprende sozinha sem revisão, porque num domínio com o dinheiro do cliente, contexto errado propaga erro.</p>
 
 <div class="refs">
 <h2>Referências</h2>
@@ -219,6 +219,7 @@
   <li>OpenHands. <i>The OpenHands Software Agent SDK.</i> arXiv:2511.03690, 2026.</li>
   <li>S. Yao et al. <i>ReAct: Synergizing Reasoning and Acting in Language Models.</i> arXiv:2210.03629, 2023.</li>
   <li>X. Wang et al. <i>Executable Code Actions Elicit Better LLM Agents</i> (CodeAct). arXiv:2402.01030, 2024.</li>
+  <li><i>Recursive Language Models.</i> arXiv:2512.24601, 2026.</li>
   <li>P. Rasmussen et al. <i>Zep / Graphiti: memória de agente por grafo de conhecimento temporal.</i> 2025.</li>
   <li>Anthropic. <i>Building Effective Agents.</i> Nota de engenharia, 2024.</li>
 </ol>

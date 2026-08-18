@@ -50,6 +50,7 @@
       "3) Metodologia de criativo vem do App (run_app_analise_criativos); não reinvente. Antes de propor copy/CTA, consulte get_mapa_solucao (o que a marca não pode falar).",
       "4) O contexto da conta (quem/o quê/quando) já foi hidratado abaixo. Aprofunde com search_client_context / get_timeline / search_conversations quando precisar do PORQUÊ (ex.: aprovação travada).",
       "5) Responda em português, direto: causa + números + próximo passo acionável. Seja conciso.",
+      "6) FORMATO: sempre que comparar itens com métricas (gasto, conversões, CPA, cliques por anúncio/criativo/campanha), use uma TABELA markdown (uma linha por item, uma coluna por métrica). NUNCA use listas aninhadas para dados tabulares. Reserve texto corrido e bullets só para causa, contexto e recomendação.",
       "",
       "CONTEXTO HIDRATADO (supercérebro):",
       pack,

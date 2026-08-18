@@ -263,6 +263,17 @@
 
   // ---- init ---------------------------------------------------------------
   function init() {
+    // tema claro/escuro (persistente em localStorage; o <head> já setou antes do paint)
+    const applyTheme = (t) => {
+      document.documentElement.dataset.theme = t;
+      const btn = $("#themeBtn");
+      btn.textContent = t === "light" ? "🌙" : "☀️";
+      btn.title = t === "light" ? "Mudar para tema escuro" : "Mudar para tema claro";
+    };
+    let theme = localStorage.getItem("az_theme") || "dark";
+    applyTheme(theme);
+    $("#themeBtn").onclick = () => { theme = theme === "light" ? "dark" : "light"; localStorage.setItem("az_theme", theme); applyTheme(theme); };
+
     const examples = [
       ["📊 Relatório de criativos", "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato."],
       ["🔎 Diagnóstico da conta", "O CPA do Ômega 3 subiu. Investigue a causa e me diga o próximo passo."],

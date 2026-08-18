@@ -57,7 +57,9 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Tema claro/escuro persistente | ✅ |
 | Comandos de barra (10, com paleta) | ✅ `/tools` e `/uso` deixam o harness inspecionável |
 | Dropdown de modelos ranqueado (#1 = mais forte), lista viva da API | ✅ fallback local sem rede |
-| Deploy automático a cada commit | ✅ `.githooks/post-commit` + hook `Stop` |
+| Deploy automático a cada commit | ✅ `.githooks/post-commit` + hook `Stop` (espelham e empurram o repo de deploy) |
+| Publicação no host | ⚠️ depende do host puxar. Railway: se a demo ficar velha, conferir **Settings → Build → Watch Paths** (com Root Directory `web`, um padrão `/web/**` vira `web/web/**` e nunca casa) e clicar **Redeploy**. Caminho alternativo pronto: `.github/workflows/pages.yml` publica no GitHub Pages a cada push, e só falta ligar em **Settings → Pages → Source: GitHub Actions** (clique humano; a Action não consegue ligar sozinha, ver comentário no arquivo). |
+| Como saber, em 5s, qual versão está no ar | ✅ chip `build=<data>` no painel do harness, e `GET /js/modelos.js` (404 = host num commit antigo) |
 
 ## Melhorias já aplicadas nesta revisão
 - Paper: citação do RLM (arXiv:2512.24601) e nod ao GraphRAG, que a página lista.

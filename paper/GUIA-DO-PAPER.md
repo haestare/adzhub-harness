@@ -71,13 +71,17 @@ entendi que a decisão de arquitetura não é 'qual loop', é **como cada recurs
 no runtime**: o que vira tool, o que vira memória, o que vira skill."
 
 ### 2. Preliminares
-**2.1** define o vocabulário (loop, tool, observação, memória, allowlist, max_steps, estado).
+**2.1 (As peças do exoesqueleto)** nomeia as seis partes de um harness pelo que elas **fazem no
+trabalho do gestor**, não por jargão: o ciclo de passos, as mãos (tools), o tato (observação), a
+memória, as travas (allowlist e teto de passos) e o que sobrevive entre as voltas (estado).
 **2.2** lê o domínio AdzHub em três camadas (supercérebro / Apps / APIs) e crava a observação
 central: essas camadas têm **naturezas diferentes**.
-**Por que está aí:** para o resto do paper usar as palavras com precisão. Um paper que não define
-os termos vira opinião.
-**Como defender:** "Antes de escolher a arquitetura eu preciso do vocabulário. E a chave é que as
-três camadas não são a mesma coisa embrulhada diferente."
+**Por que está aí:** o resto do paper precisa dessas palavras. Mas glossário seco não convence
+ninguém, então cada peça vem colada numa cena real (abrir o Gerenciador, ver o CPA, abrir o CRM).
+**Como defender:** "O exoesqueleto tem seis peças, e nenhuma delas está no modelo: todas são do
+runtime em volta. É por isso que dois produtos com o mesmo LLM entregam agentes diferentes."
+**Se perguntarem o que é 'observação':** é o que a mão traz de volta. É ela que faz o agente mudar
+de ideia no meio do caminho, quando o CRM mostra 2 vendas onde o Meta prometia 14.
 
 ### 3. Arquitetura (o coração)
 **3.1** declara a escolha (híbrido próprio, núcleo ReAct) e **justifica contra cada uma das 5

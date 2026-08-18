@@ -77,15 +77,17 @@
 <p><b>Tese.</b> Para este domínio, um harness que trata suas três camadas com o mesmo mecanismo (tudo tool) é caro e frágil; defendo um híbrido em que <i>memória é ambiente, API é tool e App é skill</i>. As seções §2 a §6 definem o vocabulário, justificam a escolha contra as alternativas, mostram o que o protótipo ilustra e onde a solução quebra.</p>
 
 <h2>2. Preliminares</h2>
-<h3>2.1. O que é um harness (no meu vocabulário)</h3>
+<h3>2.1. As peças do exoesqueleto</h3>
+<p>Retomo a imagem da introdução, porque ela dá nome a cada peça sem jargão. Um harness é o exoesqueleto que veste o cérebro, e tem seis partes. Descrevo cada uma pelo que ela faz no trabalho do gestor, não pelo termo técnico.</p>
 <ul>
-  <li><b>loop:</b> o ciclo intenção → ação → observação → intenção, repetido até uma resposta final ou um limite.</li>
-  <li><b>tool:</b> função com assinatura declarada que o modelo pode pedir para chamar; devolve uma observação (JSON) que volta ao contexto.</li>
-  <li><b>observação:</b> o resultado de uma tool, reinjetado como nova evidência.</li>
-  <li><b>memória:</b> estado que o harness carrega e injeta sem o modelo precisar "lembrar" de buscá-lo.</li>
-  <li><b>allowlist / max_steps:</b> os guard-rails que separam um harness de um chatbot solto: o conjunto fechado de tools chamáveis e o teto de passos por turno.</li>
-  <li><b>estado:</b> o que sobrevive entre passos (mensagens, resultados, escolhas) e, num produto, entre turnos.</li>
+  <li><b>O ciclo de passos (<i>loop</i>).</b> O agente não responde de um fôlego só: ele dá voltas. É o mesmo movimento do gestor que abre o Gerenciador, vê que o CPA subiu, e só então decide abrir o CRM. Cada volta usa o que a anterior trouxe, e é isso que separa investigar de chutar.</li>
+  <li><b>As mãos (<i>tools</i>).</b> São as funções que o cérebro pode pedir para acionar: puxar os anúncios do Meta, os leads do CRM. O modelo não executa nada; ele pede, e o exoesqueleto executa.</li>
+  <li><b>O tato (<i>observação</i>).</b> O que a mão traz de volta. Sem isso o agente seria cego: é a observação que o faz mudar de ideia no meio do caminho, quando o CRM mostra duas vendas onde o Meta prometia quatorze.</li>
+  <li><b>A memória.</b> O que ele já sabe antes de perguntar: quem é o cliente, quais campanhas existem, o que foi decidido na última call. Sem memória, toda pergunta começa do zero.</li>
+  <li><b>As travas (<i>allowlist</i> e teto de passos).</b> A lista fechada do que ele pode acionar e quantas voltas pode dar. É o que impede o exoesqueleto de sair andando sozinho, e o que separa um agente de um chatbot solto.</li>
+  <li><b>O que sobrevive entre as voltas (<i>estado</i>).</b> As mensagens, os resultados já obtidos, as decisões tomadas. Sem estado, a segunda volta esquece o que a primeira descobriu.</li>
 </ul>
+<p>Nenhuma dessas peças está no modelo: todas são do runtime em volta dele. É por isso que dois produtos com o mesmo LLM entregam agentes diferentes.</p>
 <h3>2.2. O domínio AdzHub (como eu o leio)</h3>
 <p>A página do desafio expõe três camadas. <b>(i) Supercérebro:</b> a memória da operação, pessoas, cliente, campanhas e decisões ligadas em grafo (GraphRAG), com linha do tempo (contexto temporal). <b>(ii) Apps:</b> metodologias empacotadas (insight da semana, brief de criativo, diagnóstico, análise de criativos, mapa de solução). <b>(iii) APIs:</b> os dados da operação (Meta, Google, Analytics, CRM, WhatsApp). A observação central deste paper: essas três camadas têm <i>naturezas</i> diferentes, e o harness rende mais quando respeita essa diferença em vez de achatar tudo em "função que o LLM chama".</p>
 

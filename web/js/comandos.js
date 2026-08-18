@@ -49,9 +49,13 @@
       nome: "/modelo", alias: ["/model"], arg: "id do modelo", desc: "Mostra ou troca o modelo da OpenRouter",
       run(ctx, arg) {
         if (!arg) {
-          return ["**Modelo atual:** `" + ctx.S.model + "`", "",
-            "Trocar: `/modelo <id>`. Sugestões com tool-calling confiável:", "",
-            ...AZ.MODELS.map((m) => "- `" + m + "`")].join("\n");
+          const l = AZ.modelos.lista;
+          return ["## Modelo atual", "`" + ctx.S.model + "`", "",
+            "## Ranking (#1 = mais forte)",
+            AZ.modelos.origem === "api" ? "Lista viva da OpenRouter, só quem suporta tool-calling." : "Lista local (a API não respondeu agora).", "",
+            "| # | Modelo | Classe | US$/M saída |", "| --- | --- | --- | --- |",
+            ...l.map((m, i) => `| ${i + 1} | \`${m.id}\` | ${m.nota || "—"} | ${m.saida ? m.saida.toFixed(2) : "—"} |`),
+            "", "Trocar: `/modelo <id>`."].join("\n");
         }
         ctx.setModelo(arg.trim());
         return `Modelo agora é \`${arg.trim()}\`. Vale para as próximas chamadas no modo LLM.`;

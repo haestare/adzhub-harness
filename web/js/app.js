@@ -28,6 +28,8 @@
       .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
   }
   const NUM_RE = /^\s*(r\$\s*)?[-+]?\d[\d.,]*\s*%?\s*$/i;
+  // item de lista: captura indentação, marcador (- * • ou 1. 1)) e o texto
+  const ITEM_RE = /^(\s*)([-*•]|\d+[.)])\s+(.*)$/;
   function renderMarkdown(text) {
     const lines = String(text).split("\n");
     let html = "", i = 0;
@@ -51,17 +53,49 @@
           "</tbody></table></div></div>";
         continue;
       }
-      if (/^\s*[-•]\s+/.test(l)) {
-        html += "<ul>"; while (i < lines.length && /^\s*[-•]\s+/.test(lines[i])) { html += `<li>${inline(lines[i].replace(/^\s*[-•]\s+/, ""))}</li>`; i++; } html += "</ul>"; continue;
-      }
-      if (/^\s*\d+\.\s+/.test(l)) {
-        html += "<ol>"; while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { html += `<li>${inline(lines[i].replace(/^\s*\d+\.\s+/, ""))}</li>`; i++; } html += "</ol>"; continue;
+      // título: vira h1/h2/h3 de verdade (o "#" NUNCA aparece na tela)
+      const h = l.match(/^\s{0,3}(#{1,6})\s+(.*)$/);
+      if (h) { const n = Math.min(h[1].length, 4); html += `<h${n}>${inline(h[2].replace(/\s*#+\s*$/, ""))}</h${n}>`; i++; continue; }
+
+      // LISTAS com aninhamento por indentação.
+      // ⚠️ Antes cada item numerado interrompido por bullets abria um <ol> NOVO,
+      // e por isso a tela mostrava "1." em todos os itens. A pilha abaixo mantém
+      // a mesma lista aberta e pendura os bullets DENTRO do item, preservando a
+      // numeração 1, 2, 3.
+      if (ITEM_RE.test(l)) {
+        const pilha = []; // [{ tag, indent }]
+        const fecha = () => { html += `</li></${pilha.pop().tag}>`; };
+        while (i < lines.length) {
+          const m = lines[i].match(ITEM_RE);
+          if (!m) {
+            // linha solta e indentada = continuação do item anterior
+            if (pilha.length && lines[i].trim() && /^\s+\S/.test(lines[i])) { html += " " + inline(lines[i].trim()); i++; continue; }
+            break;
+          }
+          const indent = m[1].replace(/\t/g, "    ").length;
+          const tag = /\d/.test(m[2]) ? "ol" : "ul";
+          while (pilha.length && indent < pilha[pilha.length - 1].indent) fecha();
+          if (!pilha.length || indent > pilha[pilha.length - 1].indent) {
+            html += `<${tag}>`; pilha.push({ tag, indent });          // novo nível (fica dentro do <li> aberto)
+          } else {
+            html += "</li>";
+            if (pilha[pilha.length - 1].tag !== tag) {                 // trocou de tipo no mesmo nível
+              html += `</${pilha.pop().tag}><${tag}>`; pilha.push({ tag, indent });
+            }
+          }
+          html += `<li>${inline(m[3])}`;
+          i++;
+        }
+        while (pilha.length) fecha();
+        continue;
       }
       if (l.trim() === "") { i++; continue; }
       html += `<p>${inline(l)}</p>`; i++;
     }
     return html;
   }
+
+  AZ.render = renderMarkdown; // exposto para teste (build/test_md.js)
 
   function summarize(name, r) {
     if (!r || r.ok === false) return "erro";
@@ -409,12 +443,22 @@
     examples.forEach(([label, prompt]) => {
       const c = el("div", "chip", label); c.onclick = () => { if (!S.running) send(prompt); }; chips.append(c);
     });
-    // dropdown de modelos (clicável, sem digitar)
+    // dropdown de modelos: ranqueado, #1 = mais forte. Pinta com o fallback na
+    // hora e repinta quando a API da OpenRouter responde (lista sempre atual).
     const sel = $("#modelSelect");
-    const models = AZ.MODELS.slice();
-    if (!models.includes(S.model)) models.unshift(S.model);
-    models.forEach((m) => { const o = el("option"); o.value = m; o.textContent = m; sel.append(o); });
-    sel.value = S.model;
+    const pintarModelos = () => {
+      sel.innerHTML = "";
+      const lista = AZ.modelos.lista.slice();
+      if (!lista.some((m) => m.id === S.model)) lista.unshift({ id: S.model, nota: "escolhido por você", saida: 0 });
+      lista.forEach((m, i) => { const o = el("option"); o.value = m.id; o.textContent = AZ.modelos.rotulo(m, i); sel.append(o); });
+      sel.value = S.model;
+      const dica = $("#modelHint");
+      if (dica) dica.textContent = AZ.modelos.origem === "api"
+        ? "Lista viva da OpenRouter, só modelos com tool-calling, ranqueada do mais forte (#1) para o mais fraco."
+        : "Lista local (a API da OpenRouter não respondeu agora). Ranqueada do mais forte (#1) para o mais fraco.";
+    };
+    pintarModelos();
+    AZ.modelos.carregar().then(pintarModelos);
 
     const input = $("#input");
     const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };

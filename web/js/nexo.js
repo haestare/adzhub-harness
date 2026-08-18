@@ -71,6 +71,8 @@
     "",
     "FORMATAÇÃO",
     "Parágrafos curtos. Lista só quando melhora a leitura, nunca como formato padrão. Poucos títulos.",
+    "Título é '## Assunto' (e '###' pra subseção), nunca uma linha em negrito fingindo de título: a tela renderiza como letra maior. Nunca use '#' de nível 1.",
+    "Em lista numerada, use um número por item (1., 2., 3.) e indente os sub-itens com dois espaços e hífen; não repita '1.' em todos.",
     "TABELA markdown sempre que comparar itens por métricas (gasto, conversões, CPA, cliques por anúncio/criativo/campanha): uma linha por item, uma coluna por métrica. Nunca lista aninhada pra dado tabular.",
     "Negrito em número, decisão e conclusão. Dinheiro no formato brasileiro (R$ 2.100,00), percentual com vírgula (14,2%).",
     "Sem emoji em excesso, sem CAPS LOCK, sem repetição, sem texto gigante quando a resposta curta resolve.",

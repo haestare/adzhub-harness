@@ -320,3 +320,16 @@ table.fb-table { border-collapse: collapse; width: 100%; min-width: max-content;
 .palette .cmd-n { font-family: var(--mono); font-size: 12.5px; color: var(--accent); font-weight: 600; }
 .palette .cmd-a { font-family: var(--mono); font-size: 11px; color: var(--txt-faint); background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
 .palette .cmd-d { font-size: 12.5px; color: var(--txt-dim); margin-left: auto; text-align: right; }
+
+/* títulos dentro do balão: hierarquia por TAMANHO, o "#" nunca aparece ------ */
+.bubble h1, .bubble h2, .bubble h3, .bubble h4 { margin: 14px 0 6px; line-height: 1.25; font-weight: 700; color: var(--txt); }
+.bubble h1:first-child, .bubble h2:first-child, .bubble h3:first-child, .bubble h4:first-child { margin-top: 2px; }
+.bubble h1 { font-size: 19.5px; letter-spacing: -.2px; }
+.bubble h2 { font-size: 17px; letter-spacing: -.1px; }
+.bubble h3 { font-size: 15px; }
+.bubble h4 { font-size: 13.5px; color: var(--txt-dim); text-transform: uppercase; letter-spacing: .5px; }
+.bubble h1 + p, .bubble h2 + p, .bubble h3 + p { margin-top: 0; }
+/* listas aninhadas: o nível de dentro respira e usa marcador diferente */
+.bubble li > ul, .bubble li > ol { margin: 4px 0 2px; }
+.bubble li > ul { list-style: circle; }
+.bubble ol { list-style: decimal; }

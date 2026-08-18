@@ -1,19 +1,30 @@
 # Publica a demo no GitHub Pages a cada push na main.
 #
-# Por que existe, se já há Railway: o Railway parou de redeployar sozinho e a
-# demo ficou dias servindo uma versão antiga sem avisar. Este caminho não tem
-# watch path para configurar errado nem build para falhar em silêncio: o Action
-# roda no push, e o log do próprio GitHub diz se subiu.
+# Por que existe, se ja ha Railway: o Railway parou de redeployar sozinho e a
+# demo ficou servindo uma versao antiga sem avisar. Este caminho nao tem watch
+# path para configurar errado nem build para falhar em silencio: o Action roda
+# no push, e o log do proprio GitHub diz se subiu.
 #
-# A demo é 100% estática (o server.js só existe para hosts que rodam processo),
-# então o Pages serve ela inteira. O carimbo de cache-busting, que no Railway é
-# feito pelo servidor, aqui é feito em build time por .github/carimbar.mjs.
+# A demo e 100% estatica (o server.js so existe para hosts que rodam processo),
+# entao o Pages serve ela inteira. O carimbo de cache-busting, que no Railway e
+# feito pelo servidor, aqui e feito em build time por .github/carimbar.mjs.
+#
+# 🔴 ARMADILHA MEDIDA (2026-08-18): `actions/configure-pages` com
+# `enablement: true` NAO consegue ligar o Pages sozinho. Ele chama
+# POST /repos/{owner}/{repo}/pages, que exige permissao de ADMIN no
+# repositorio, e o GITHUB_TOKEN do workflow nao tem isso por mais que o
+# `permissions:` declare `pages: write`. O erro e "Resource not accessible by
+# integration", que parece permissao mal declarada e nao e. Ligar o Pages e
+# clique humano: Settings > Pages > Source: GitHub Actions, uma vez so.
+# Por isso o primeiro passo CONFERE em vez de tentar: sem Pages ligado o job
+# termina VERDE avisando o que fazer, em vez de encher a caixa de e-mail com
+# falha vermelha a cada commit.
 name: Publicar demo (GitHub Pages)
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:        # permite disparar na mão pelo botão Run workflow
+  workflow_dispatch:        # permite disparar na mao pelo botao Run workflow
 
 permissions:
   contents: read
@@ -33,20 +44,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Carimbar assets (cache-busting + build visível na tela)
+      - id: check
+        name: O Pages esta ligado neste repositorio?
+        run: |
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages")
+          if [ "$codigo" = "200" ]; then
+            echo "ligado=sim" >> "$GITHUB_OUTPUT"
+            echo "Pages ligado, publicando."
+          else
+            echo "ligado=nao" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Pages desligado::HTTP $codigo em /pages. Ligue em Settings > Pages > Source: GitHub Actions. O proximo push publica sozinho; nenhuma mudanca de codigo e necessaria."
+          fi
+
+      - name: Carimbar assets (cache-busting + build visivel na tela)
+        if: steps.check.outputs.ligado == 'sim'
         run: node .github/carimbar.mjs
 
-      # enablement: true liga o Pages pela API se ele ainda estiver desligado.
-      # Sem isso a primeira execucao morre em "Get Pages site failed / Not Found",
-      # que e um 404 do repo, nao um erro do workflow: o passo consulta um recurso
-      # que so passa a existir depois de alguem clicar em Settings > Pages.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
+        if: steps.check.outputs.ligado == 'sim'
 
       - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.ligado == 'sim'
         with:
-          path: web           # só a demo vai para o ar, não o paper nem os scripts
+          path: web           # so a demo vai para o ar, nao o paper nem os scripts
 
       - id: deploy
+        if: steps.check.outputs.ligado == 'sim'
         uses: actions/deploy-pages@v4

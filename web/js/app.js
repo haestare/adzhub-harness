@@ -252,7 +252,16 @@
   const liveTrace = $("#liveTrace");
   async function send(text) {
     if (!text.trim() || S.running) return;
+    // comando de barra é ação LOCAL de sessão: não entra no harness, não gasta token
+    if (AZ.Comandos && AZ.Comandos.eComando(text)) {
+      addMsg("user", (body) => { const b = el("div", "bubble"); b.textContent = text; body.append(b); });
+      const { resposta } = AZ.Comandos.executar(text, ctxComandos());
+      if (resposta) addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = renderMarkdown(resposta); body.append(b); });
+      messages.scrollTop = messages.scrollHeight;
+      return;
+    }
     S.running = true; $("#sendBtn").disabled = true;
+    ultima = text;
     addMsg("user", (body) => { const b = el("div", "bubble"); b.textContent = text; body.append(b); });
     liveTrace.innerHTML = "";
     const steps = [];
@@ -335,6 +344,33 @@
     }
   }
 
+  // ---- contexto que os comandos recebem (o que eles podem mexer) ----------
+  let ultima = "";            // última pergunta de verdade (para /refazer)
+  let temaAtual = "dark";     // espelha o tema; init() define de fato
+  function ctxComandos() {
+    return {
+      S, messages, send, openModal, renderMarkdown,
+      ultimaPergunta: () => ultima,
+      limparConversa() {
+        messages.innerHTML = "";
+        liveTrace.innerHTML = '<div class="empty">Envie uma mensagem para ver o harness orquestrar as tools.</div>';
+        greeting();
+      },
+      setModo(m) { S.mode = m; sessionStorage.setItem("az_mode", m); refreshCfgUI(); },
+      setModelo(m) { S.model = m; sessionStorage.setItem("az_model", m); const s = $("#modelSelect"); if (s && !Array.from(s.options).some((o) => o.value === m)) { const o = el("option"); o.value = m; o.textContent = m; s.append(o); } if (s) s.value = m; refreshCfgUI(); },
+      trocarTema(alvo) { temaAtual = alvo || (temaAtual === "light" ? "dark" : "light"); aplicarTema(temaAtual); return temaAtual; },
+      repintarMedidor: () => pintarMedidor(null),
+    };
+  }
+  function aplicarTema(t) {
+    temaAtual = t;
+    document.documentElement.dataset.theme = t;
+    localStorage.setItem("az_theme", t);
+    const btn = $("#themeBtn");
+    btn.textContent = t === "light" ? "🌙" : "☀️";
+    btn.title = t === "light" ? "Mudar para tema escuro" : "Mudar para tema claro";
+  }
+
   // ---- config -------------------------------------------------------------
   function refreshCfgUI() {
     $("#modePill").textContent = "modo: " + (S.mode === "llm" ? "LLM · " + S.model : "simulado");
@@ -360,15 +396,8 @@
   // ---- init ---------------------------------------------------------------
   function init() {
     // tema claro/escuro (persistente em localStorage; o <head> já setou antes do paint)
-    const applyTheme = (t) => {
-      document.documentElement.dataset.theme = t;
-      const btn = $("#themeBtn");
-      btn.textContent = t === "light" ? "🌙" : "☀️";
-      btn.title = t === "light" ? "Mudar para tema escuro" : "Mudar para tema claro";
-    };
-    let theme = localStorage.getItem("az_theme") || "dark";
-    applyTheme(theme);
-    $("#themeBtn").onclick = () => { theme = theme === "light" ? "dark" : "light"; localStorage.setItem("az_theme", theme); applyTheme(theme); };
+    aplicarTema(localStorage.getItem("az_theme") || "dark");
+    $("#themeBtn").onclick = () => aplicarTema(temaAtual === "light" ? "dark" : "light");
 
     const examples = [
       ["📊 Relatório de criativos", "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato."],
@@ -390,7 +419,15 @@
     const input = $("#input");
     const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
     input.addEventListener("input", grow);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const v = input.value; input.value = ""; grow(); send(v); } });
+    // paleta de comandos: instalada ANTES do keydown de enviar, porque quando ela
+    // está aberta o Enter escolhe o comando em vez de mandar a mensagem.
+    AZ.Comandos.instalarPaleta({
+      input, palette: $("#palette"),
+      onEscolher: (v) => { input.value = ""; grow(); send(v); },
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.defaultPrevented) { e.preventDefault(); const v = input.value; input.value = ""; grow(); send(v); }
+    });
     $("#sendBtn").onclick = () => { const v = input.value; input.value = ""; grow(); send(v); };
 
     $("#cfgBtn").onclick = openModal;

@@ -409,8 +409,10 @@
   function refreshCfgUI() {
     $("#modePill").textContent = "modo: " + (S.mode === "llm" ? "LLM · " + S.model : "simulado");
     const cfg = $("#cfg"); cfg.innerHTML = "";
-    ["max_steps=" + AZ.HARNESS_CONFIG.maxSteps, "tools=" + AZ.HARNESS_CONFIG.allowlist.length + " (allowlist)", "memória=hidratada", "loop=ReAct"]
-      .forEach((k) => cfg.append(el("span", "kv", k)));
+    const chips = ["max_steps=" + AZ.HARNESS_CONFIG.maxSteps, "tools=" + AZ.HARNESS_CONFIG.allowlist.length + " (allowlist)", "memória=hidratada", "loop=ReAct"];
+    // build visível: sem isso não dá para saber, olhando a tela, se o deploy pegou
+    if (window.__BUILD) chips.push("build=" + window.__BUILD);
+    chips.forEach((k) => cfg.append(el("span", "kv", k)));
   }
   function openModal() {
     $("#keyInput").value = S.key;

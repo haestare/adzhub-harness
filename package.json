@@ -1,0 +1,12 @@
+{
+  "name": "adzhub-harness",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Demo do chat agentico (harness Tri-Camada) da AdzHub. App em web/.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

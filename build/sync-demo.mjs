@@ -14,8 +14,15 @@
  *   node build/sync-demo.mjs            # só sincroniza se algo mudou
  *   node build/sync-demo.mjs --check    # diz o que faria, sem commitar
  *   node build/sync-demo.mjs -m "texto" # mensagem de commit própria
+ *   node build/sync-demo.mjs --auto     # para o hook: sai CALADO se nada mudou
+ *
+ * ⚠️ O `--auto` existe porque o hook roda ao fim de TODO turno, e sem ele todo
+ * turno pagaria um fetch de rede. Ele compara uma impressão digital do conteúdo
+ * (caminho + tamanho + mtime) com a da última vez, guardada em .sync-state, e só
+ * chama o resto quando de fato mudou.
  */
 import { execFileSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -28,11 +35,30 @@ const SO_DO_DEPLOY = ["package.json", "server.js"]; // existem só no repo de de
 
 const args = process.argv.slice(2);
 const CHECK = args.includes("--check");
+const AUTO = args.includes("--auto");
 const msgIdx = args.findIndex((a) => a === "-m" || a === "--message");
 const MSG = msgIdx >= 0 ? args[msgIdx + 1] : null;
 
 const git = (cwd, ...a) => execFileSync("git", a, { cwd, encoding: "utf8" }).trim();
-const log = (...a) => console.log(...a);
+const log = (...a) => { if (!AUTO || process.env.SYNC_VERBOSE) console.log(...a); };
+
+// impressão digital do que será espelhado (barato: nada de ler conteúdo)
+function digital(dir, acc = []) {
+  for (const nome of fs.readdirSync(dir).sort()) {
+    if (IGNORAR.has(nome) || nome === ".sync-state") continue;
+    const p = path.join(dir, nome), st = fs.statSync(p);
+    if (st.isDirectory()) digital(p, acc);
+    else acc.push(`${path.relative(SRC, p)}:${st.size}:${Math.floor(st.mtimeMs)}`);
+  }
+  return acc;
+}
+const ESTADO = path.join(SRC, ".sync-state");
+if (AUTO) {
+  const hash = crypto.createHash("sha1").update(digital(SRC).join("\n")).digest("hex");
+  const antes = fs.existsSync(ESTADO) ? fs.readFileSync(ESTADO, "utf8").trim() : "";
+  if (hash === antes) process.exit(0);            // nada mudou: sai sem dizer nada
+  process.on("exit", (c) => { if (c === 0) fs.writeFileSync(ESTADO, hash); });
+}
 
 function copiar(de, para) {
   fs.mkdirSync(para, { recursive: true });

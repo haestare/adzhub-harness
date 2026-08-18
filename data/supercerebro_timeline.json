@@ -1,0 +1,132 @@
+{
+  "client_id": "cli_housewhey",
+  "events": [
+    {
+      "id": "ev_onboard",
+      "occurred_at": "2026-06-04T10:00:00-03:00",
+      "title": "Housewhey entra na operação SPOT",
+      "summary": "Rodrigo fecha com a SPOT. Aline assume tráfego, Carolina a gestão da conta e Luiza o atendimento no WhatsApp.",
+      "actor_ids": [
+        "p_carolina",
+        "p_rodrigo"
+      ],
+      "related_node_ids": [
+        "cli_housewhey",
+        "hub_spot"
+      ]
+    },
+    {
+      "id": "ev_namorados_brief",
+      "occurred_at": "2026-06-09T15:30:00-03:00",
+      "title": "Briefing da campanha de Namorados",
+      "summary": "Reunião + WhatsApp para alinhar criativos de Dia dos Namorados. Decisão: focar em kits de presente.",
+      "actor_ids": [
+        "p_aline",
+        "p_carolina",
+        "p_rodrigo"
+      ],
+      "related_node_ids": [
+        "camp_namorados"
+      ]
+    },
+    {
+      "id": "ev_namorados_fim",
+      "occurred_at": "2026-06-29T18:00:00-03:00",
+      "title": "Namorados encerra com kits acima da meta",
+      "summary": "Campanha de Namorados encerrada. Aprendizado registrado: kit de presente converte melhor que produto avulso.",
+      "actor_ids": [
+        "p_carolina"
+      ],
+      "related_node_ids": [
+        "camp_namorados"
+      ]
+    },
+    {
+      "id": "ev_omega3_sobe",
+      "occurred_at": "2026-07-06T09:00:00-03:00",
+      "title": "Ômega 3 sobe no Meta Ads",
+      "summary": "Campanha de Ômega 3 entra no ar. Vídeo de depoimento da Ana é escalado para público frio. Carolina passa a acompanhar o CPA.",
+      "actor_ids": [
+        "p_aline",
+        "p_carolina"
+      ],
+      "related_node_ids": [
+        "camp_omega3",
+        "asset_omega3_depo",
+        "ch_meta"
+      ]
+    },
+    {
+      "id": "ev_whey_evergreen",
+      "occurred_at": "2026-07-11T11:00:00-03:00",
+      "title": "Whey evergreen reforçado",
+      "summary": "Aline reforça a campanha evergreen de Whey com um novo UGC. Volume de leads sobe no WhatsApp.",
+      "actor_ids": [
+        "p_aline",
+        "p_luiza"
+      ],
+      "related_node_ids": [
+        "camp_whey"
+      ]
+    },
+    {
+      "id": "ev_luiza_origem",
+      "occurred_at": "2026-08-03T14:20:00-03:00",
+      "title": "Luiza estranha origem dos leads",
+      "summary": "No atendimento, vários leads dizem que acharam a Housewhey 'no Google', mas o investimento em Google está quase parado. Luiza registra a dúvida para a call.",
+      "actor_ids": [
+        "p_luiza"
+      ],
+      "related_node_ids": [
+        "ch_whatsapp",
+        "ch_google"
+      ]
+    },
+    {
+      "id": "ev_creatina_envio",
+      "occurred_at": "2026-08-06T16:00:00-03:00",
+      "title": "Peças de Creatina enviadas para aprovação",
+      "summary": "Aline finaliza as peças da nova campanha de Creatina e envia para o Rodrigo aprovar. Lançamento depende do aceite dele.",
+      "actor_ids": [
+        "p_aline",
+        "p_carolina"
+      ],
+      "related_node_ids": [
+        "camp_creatina",
+        "asset_creatina_foco",
+        "asset_creatina_benef",
+        "task_aprovar_creatina"
+      ]
+    },
+    {
+      "id": "ev_call_semanal",
+      "occurred_at": "2026-08-08T10:00:00-03:00",
+      "title": "Call semanal: CPA do Ômega 3 preocupa",
+      "summary": "Carolina levanta que o custo por venda do Ômega 3 subiu. Rodrigo pede clareza sobre qual anúncio está puxando o custo. Aprovação da Creatina fica pendente.",
+      "actor_ids": [
+        "p_carolina",
+        "p_aline",
+        "p_rodrigo"
+      ],
+      "related_node_ids": [
+        "camp_omega3",
+        "camp_creatina",
+        "meet_semanal"
+      ]
+    },
+    {
+      "id": "ev_agora",
+      "occurred_at": "2026-08-15T09:00:00-03:00",
+      "title": "Hoje: decidir realocação e destravar Creatina",
+      "summary": "Pendências abertas: revisar os criativos de Ômega 3, decidir realocação de verba e destravar a aprovação da Creatina com o cliente.",
+      "actor_ids": [
+        "p_carolina",
+        "p_aline"
+      ],
+      "related_node_ids": [
+        "camp_omega3",
+        "camp_creatina"
+      ]
+    }
+  ]
+}

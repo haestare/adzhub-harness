@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AdzHub · Harness Agêntico (demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%235b8cff%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-size=%2220%22 text-anchor=%22middle%22 fill=%22%230b0e14%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">A</div>
+        <div>AdzHub <small>· harness agêntico · Housewhey</small></div>
+      </div>
+      <div class="spacer"></div>
+      <span class="pill" id="modePill">modo: simulado</span>
+      <button class="btn" id="cfgBtn">⚙ Configurar</button>
+    </header>
+
+    <div class="main">
+      <!-- chat -->
+      <section class="chat-pane">
+        <div class="messages" id="messages"></div>
+        <div class="composer-wrap">
+          <div class="chips" id="chips"></div>
+          <div class="composer">
+            <textarea id="input" rows="1" placeholder="Peça uma tarefa: relatório de criativos, diagnóstico da conta, pauta da call…"></textarea>
+            <button class="btn primary" id="sendBtn">Enviar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- trace -->
+      <aside class="trace-pane">
+        <h3>Como o harness funciona</h3>
+        <div class="legend">
+          <div class="row"><span class="badge memoria">memória</span><span><b>Supercérebro</b> (grafo + linha do tempo). Hidratado como <b>ambiente</b> antes do loop, não chamado às cegas.</span></div>
+          <div class="row"><span class="badge api">api</span><span><b>APIs</b> (Meta, CRM). <b>Tools</b> que o agente chama no loop ReAct quando precisa de dado cru.</span></div>
+          <div class="row"><span class="badge app">app</span><span><b>Apps</b> de metodologia. <b>Skills</b> encapsuladas; o harness chama o app, não reimplementa a metodologia.</span></div>
+        </div>
+        <div class="cfg" id="cfg"></div>
+        <h3>Trace da execução</h3>
+        <div class="steps" id="liveTrace"><div class="empty">Envie uma mensagem para ver o harness orquestrar as tools.</div></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- config modal -->
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <h2>Configuração do harness</h2>
+      <div class="sub">A chave fica só nesta sessão do navegador (sessionStorage). Nunca vai para um servidor nosso, só para a OpenRouter.</div>
+
+      <div class="field">
+        <label>Motor</label>
+        <div class="radio-row" id="modeRow">
+          <label data-mode="sim"><input type="radio" name="mode" value="sim" checked /> Simulado (sem key)</label>
+          <label data-mode="llm"><input type="radio" name="mode" value="llm" /> LLM (OpenRouter)</label>
+        </div>
+        <div class="hint">Simulado roda as tools reais sobre o mock, sem LLM. LLM usa o modelo abaixo para raciocinar e orquestrar.</div>
+      </div>
+
+      <div class="field">
+        <label>OPENROUTER_API_KEY <span id="keyStatus"><span class="status-dot off"></span><span style="font-size:11.5px;color:var(--txt-faint)">não definida</span></span></label>
+        <input id="keyInput" type="password" placeholder="sk-or-v1-…" autocomplete="off" />
+        <div class="hint">Pegue em openrouter.ai/keys. Só é usada no modo LLM.</div>
+      </div>
+
+      <div class="field">
+        <label>Modelo</label>
+        <input id="modelInput" list="modelList" placeholder="openai/gpt-4o-mini" />
+        <datalist id="modelList"></datalist>
+        <div class="hint">Qualquer modelo com suporte a tool-calling na OpenRouter.</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="cfgCancel">Fechar</button>
+        <button class="btn primary" id="cfgSave">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="js/tools.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/openrouter.js"></script>
+  <script src="js/harness.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

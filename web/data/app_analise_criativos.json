@@ -1,0 +1,88 @@
+{
+  "client_id": "cli_housewhey",
+  "app": "analise_criativos",
+  "gerado_em": "2026-08-15",
+  "metodologia": "Nota de gancho (hook) + clareza de CTA + adequação ao palco (público). Recomendação: seguir | pausar | variar.",
+  "ranking": [
+    {
+      "ad_id": "ad_omega3_antesdepois",
+      "posicao": 1,
+      "nota_hook": 9.0,
+      "nota_cta": 8.5,
+      "palco": "frio",
+      "recomendacao": "variar",
+      "racional": "Melhor eficiência da conta. Gancho visual forte e estável. Vale escalar verba e testar variações antes de saturar.",
+      "brief_sugerido": {
+        "publico": "frio - interessados em saúde/longevidade",
+        "hook": "Comparativo visual em 3 segundos",
+        "mensagem": "Constância traz resultado; prova social real",
+        "cta": "Quero começar hoje",
+        "metrica_sucesso": "manter CPA de venda < R$150 ao dobrar verba"
+      }
+    },
+    {
+      "ad_id": "ad_whey_ugc",
+      "posicao": 2,
+      "nota_hook": 8.0,
+      "nota_cta": 6.5,
+      "palco": "frio",
+      "recomendacao": "variar",
+      "racional": "Volume alto de cliques, mas CTA fraco e qualificação irregular no atendimento. Testar CTA mais específico.",
+      "brief_sugerido": {
+        "publico": "frio - fitness/rotina",
+        "hook": "Rotina real do cliente (UGC)",
+        "mensagem": "Praticidade no dia a dia",
+        "cta": "Ver sabores e preço",
+        "metrica_sucesso": "subir taxa lead→venda acima de 20%"
+      }
+    },
+    {
+      "ad_id": "ad_omega3_oferta",
+      "posicao": 3,
+      "nota_hook": 6.5,
+      "nota_cta": 7.5,
+      "palco": "remarketing",
+      "recomendacao": "seguir",
+      "racional": "Cumpre o papel de fundo de funil. Sem urgência de mexer.",
+      "brief_sugerido": null
+    },
+    {
+      "ad_id": "ad_whey_sacola",
+      "posicao": 4,
+      "nota_hook": 5.5,
+      "nota_cta": 6.0,
+      "palco": "frio",
+      "recomendacao": "seguir",
+      "racional": "Mediano. Segura enquanto houver criativo melhor para escalar.",
+      "brief_sugerido": null
+    },
+    {
+      "ad_id": "ad_omega3_depoimento",
+      "posicao": 5,
+      "nota_hook": 3.5,
+      "nota_cta": 6.0,
+      "palco": "frio",
+      "recomendacao": "pausar",
+      "racional": "Gancho despencou e frequência alta: sinais de fadiga/saturação no mesmo público. Custo por resultado real subiu muito. Pausar e substituir por variação nova.",
+      "brief_sugerido": {
+        "publico": "frio - saúde 35+",
+        "hook": "Nova abertura em 3s (evitar rosto já batido)",
+        "mensagem": "Benefício concreto sem promessa de cura",
+        "cta": "Quero saber mais",
+        "metrica_sucesso": "hook_rate > 30% na 1a semana"
+      }
+    }
+  ],
+  "pecas_bloqueadas": [
+    {
+      "ad_id": "ad_creatina_foco",
+      "status": "aguardando aprovação do cliente",
+      "desde": "2026-08-06"
+    },
+    {
+      "ad_id": "ad_creatina_benef",
+      "status": "aguardando aprovação do cliente",
+      "desde": "2026-08-06"
+    }
+  ]
+}

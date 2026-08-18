@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Harness Tri-Camada · AdzHub</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Charter", "Georgia", "Times New Roman", serif;
+    font-size: 9.6pt; line-height: 1.42; color: #14171c; margin: 0;
+    hyphens: auto;
+  }
+  .paper { column-count: 2; column-gap: 8mm; text-align: justify; }
+  .span-all { column-span: all; -webkit-column-span: all; }
+
+  .title-block { text-align: center; margin-bottom: 10px; }
+  h1.title { font-size: 17pt; line-height: 1.2; margin: 0 0 3px; font-weight: 700; letter-spacing: .1px; }
+  .subtitle { font-size: 10.5pt; color: #333; font-style: italic; margin: 0 0 10px; }
+  .authors { font-size: 10pt; margin: 6px 0 2px; }
+  .affil { font-size: 8.8pt; color: #444; }
+  .rule { border: none; border-top: 1px solid #c9ced6; margin: 10px 0 12px; }
+
+  .abstract { font-size: 9pt; margin: 0 auto 6px; max-width: 165mm; padding: 0 6mm; }
+  .abstract .lbl { font-variant: small-caps; font-weight: 700; letter-spacing: .3px; }
+  .keywords { font-size: 8.7pt; margin: 6px 6mm 4px; }
+  .keywords .lbl { font-weight: 700; }
+
+  h2 { font-size: 10.3pt; margin: 12px 0 4px; font-weight: 700; }
+  h3 { font-size: 9.6pt; margin: 9px 0 3px; font-weight: 700; font-style: italic; }
+  p { margin: 0 0 6px; }
+  ul { margin: 3px 0 6px; padding-left: 14px; }
+  li { margin: 2px 0; }
+  b, strong { font-weight: 700; }
+  code, .mono { font-family: "SFMono-Regular", Consolas, monospace; font-size: 8.4pt; background: #f1f3f6; padding: 0 2px; border-radius: 2px; }
+  .small { font-size: 8.6pt; color: #444; }
+
+  figure { margin: 6px 0 10px; }
+  figcaption { font-size: 8.4pt; color: #333; margin-top: 5px; text-align: left; }
+  figcaption b { font-variant: small-caps; }
+
+  table.t1 { width: 100%; border-collapse: collapse; font-size: 8.4pt; margin: 4px 0 6px; }
+  table.t1 th, table.t1 td { border: 1px solid #b9c0cb; padding: 3px 6px; text-align: left; vertical-align: top; }
+  table.t1 th { background: #eef1f5; font-weight: 700; }
+  table.t1 td.mono { font-family: "SFMono-Regular", Consolas, monospace; font-size: 7.9pt; }
+
+  .refs { font-size: 8.4pt; }
+  .refs ol { padding-left: 16px; margin: 3px 0; }
+  .refs li { margin: 2px 0; }
+  .footer-note { font-size: 8pt; color: #667; text-align: center; margin-top: 10px; border-top: 1px solid #dfe3e9; padding-top: 6px; }
+  .kbd { font-family: monospace; font-size: 8.2pt; background:#f1f3f6; border:1px solid #d6dae1; border-radius:3px; padding:0 3px; }
+</style>
+</head>
+<body>
+
+<div class="span-all title-block">
+  <h1 class="title">Harness Tri-Camada: memória como ambiente, API como tool, App como skill</h1>
+  <div class="subtitle">Um runtime híbrido (ReAct + contexto-ambiente + skills) para o chat agêntico de marketing da AdzHub</div>
+  <div class="authors">Rafael Yran Azevedo</div>
+  <div class="affil">Candidato · Desafio Harness Agêntico · AdzHub Núcleo Fundacional, 2026</div>
+  <hr class="rule" />
+</div>
+
+<div class="span-all abstract">
+  <p><span class="lbl">Resumo.</span> O gestor de marketing da AdzHub não precisa de um chatbot que responde: precisa de um agente que resolve tarefas compostas (cruzar gasto de anúncio com venda real, diagnosticar um CPA que subiu, montar a pauta de uma call) navegando o histórico da conta. Defendo que o erro comum, tratar tudo como <i>tool</i>, subutiliza o domínio. Proponho um harness híbrido de três mecanismos, um por camada: a memória (supercérebro: grafo + linha do tempo) é <b>hidratada como ambiente</b> antes do loop, não consultada às cegas; as APIs (Meta, CRM) são <b>tools</b> num loop ReAct; e os Apps de metodologia são <b>skills</b> encapsuladas que o harness invoca sem reimplementar. Um protótipo web de chat ilustra a tese sobre um dataset mock da Housewhey, com o <i>trace</i> do harness visível (hidratação → tools → observações → resposta) e cinco problemas de gestão plantados e não rotulados. O que fica só no paper: a construção do grafo temporal real, permissões de escrita e avaliação automática. O recorte consciente: nenhuma ação que escreve na conta; o MVP lê, diagnostica e propõe.</p>
+</div>
+<div class="span-all keywords"><span class="lbl">Palavras-chave:</span> harness agêntico, ReAct híbrido, memória temporal, contexto como ambiente (RLM), skills, orquestração, marketing.</div>
+<hr class="span-all rule" />
+
+<div class="paper">
+
+<h2>1. Introdução</h2>
+<p>O produto-alvo é um chat agêntico (no espírito do Cursor, mas para marketing): o gestor descreve uma tarefa e o agente orquestra contexto, Apps e APIs até uma ação útil. Antes de desenhar, separo dois conceitos que se confundem. O <b>modelo</b> é o LLM: prevê o próximo token e, no máximo, emite a intenção de chamar uma função. O <b>harness</b> é o runtime em volta: o loop que executa a chamada, injeta a observação de volta, guarda estado, impõe limites (allowlist de tools, teto de passos) e decide o que entra no contexto. Trocar de modelo troca o raciocínio; trocar de harness troca o que o agente consegue fazer com aquele raciocínio.</p>
+<p>Uma imagem fixa a distinção. O LLM é um cérebro num pote: sabe muito, mas não vê o mundo nem age. O harness é o exoesqueleto que pluga esse cérebro na operação. O exoesqueleto restringe o foco (em vez de deixar o cérebro divagar, prende ele nos passos daquela tarefa), provê os músculos e as ferramentas (tools, memória, dados da conta) e força a saída num comportamento estrito. E faz isso <i>sem tocar no cérebro</i>: não mexemos nos pesos do modelo (isso seria treino), apenas embrulhamos software em volta e filtramos o que o LLM vê. Mesmo cérebro, exoesqueletos diferentes, agentes diferentes.</p>
+<p>No início do estudo eu tratava harness como sinônimo de "loop de tool-calling": ligar o modelo a um punhado de funções e deixar rodar. Estudando os tipos de referência (ReAct [2], sandbox/CodeAct [3], sessão com permissões e skills, orquestração por grafo, contexto como ambiente) e o SDK do OpenHands [1], o que mudou foi entender que a decisão de arquitetura não é "qual loop", e sim <b>como cada recurso do domínio entra no runtime</b>: o que vira tool, o que vira memória e o que vira unidade de trabalho encapsulada. Um bom harness é, antes de tudo, uma política de contexto.</p>
+<p><b>Tese.</b> Para este domínio, um harness que trata suas três camadas com o mesmo mecanismo (tudo tool) é caro e frágil; defendo um híbrido em que <i>memória é ambiente, API é tool e App é skill</i>. As seções §2 a §6 definem o vocabulário, justificam a escolha contra as alternativas, mostram o que o protótipo ilustra e onde a solução quebra.</p>
+
+<h2>2. Preliminares</h2>
+<h3>2.1. O que é um harness (no meu vocabulário)</h3>
+<ul>
+  <li><b>loop:</b> o ciclo intenção → ação → observação → intenção, repetido até uma resposta final ou um limite.</li>
+  <li><b>tool:</b> função com assinatura declarada que o modelo pode pedir para chamar; devolve uma observação (JSON) que volta ao contexto.</li>
+  <li><b>observação:</b> o resultado de uma tool, reinjetado como nova evidência.</li>
+  <li><b>memória:</b> estado que o harness carrega e injeta sem o modelo precisar "lembrar" de buscá-lo.</li>
+  <li><b>allowlist / max_steps:</b> os guard-rails que separam um harness de um chatbot solto: o conjunto fechado de tools chamáveis e o teto de passos por turno.</li>
+  <li><b>estado:</b> o que sobrevive entre passos (mensagens, resultados, escolhas) e, num produto, entre turnos.</li>
+</ul>
+<h3>2.2. O domínio AdzHub (como eu o leio)</h3>
+<p>A página do desafio expõe três camadas. <b>(i) Supercérebro:</b> a memória da operação, pessoas, cliente, campanhas e decisões ligadas em grafo, com linha do tempo (contexto temporal). <b>(ii) Apps:</b> metodologias empacotadas (insight da semana, brief de criativo, diagnóstico, análise de criativos, mapa de solução). <b>(iii) APIs:</b> os dados da operação (Meta, Google, Analytics, CRM, WhatsApp). A observação central deste paper: essas três camadas têm <i>naturezas</i> diferentes, e o harness rende mais quando respeita essa diferença em vez de achatar tudo em "função que o LLM chama".</p>
+
+<h2>3. Arquitetura</h2>
+<h3>3.1. A escolha: um híbrido de três mecanismos</h3>
+<p>Escolho um híbrido próprio com núcleo ReAct, e justifico contra cada referência, não só descrevo a minha:</p>
+<ul>
+  <li><b>ReAct puro</b> (loop tool-calling): é o esqueleto certo para tarefas abertas de diagnóstico, mas, sozinho, transforma memória em "mais uma tool", e o LLM precisa adivinhar quando buscar contexto. Num domínio onde quase toda pergunta pressupõe o histórico da conta, isso gera respostas sem chão ou passos desperdiçados. Mantenho o loop, mas tiro a memória de dentro dele por padrão.</li>
+  <li><b>Sandbox / CodeAct</b> (o agente escreve e executa código [3]): poderoso para engenharia, mas aqui o trabalho não é rodar código arbitrário, é cruzar fontes tabulares e aplicar metodologia. O sandbox soma superfície de risco (execução) e latência sem resolver o problema do gestor. Fica fora do MVP; volta, no máximo, como uma tool isolada de cálculo (§6).</li>
+  <li><b>Sessão com permissões e skills:</b> a parte de <i>skills</i> eu adoto (os Apps são exatamente isso). A parte de <i>permissões</i> eu adio de propósito, porque o MVP é só-leitura (§3.3). Uso metade dessa referência, conscientemente.</li>
+  <li><b>Orquestração por grafo</b> (estados): ótima quando o fluxo é conhecido e repetível (um pipeline fixo). O chat do gestor é o oposto: aberto, uma tarefa diferente por mensagem. Um grafo de controle rígido engessaria. Nota: o supercérebro é um grafo de <i>dados</i>, não de <i>controle</i>. Uso o grafo como memória, não como máquina de estados.</li>
+  <li><b>Contexto como ambiente (RLM):</b> é a peça que cura a fraqueza do ReAct puro. Trato o supercérebro como ambiente: o harness recupera um pacote de contexto (nós relevantes do grafo + eventos recentes da timeline) e o injeta no prompt antes do loop. O modelo já começa situado.</li>
+</ul>
+<p>O híbrido, então: <b>RLM para a memória, ReAct para as APIs, skills para os Apps.</b> Nenhuma referência sozinha cobre as três naturezas; a tese está na composição.</p>
+
+<figure class="span-all">
+<svg viewBox="0 0 900 320" width="100%" style="max-width:180mm;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#444"/></marker>
+    <marker id="arD" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#8a93a5"/></marker>
+  </defs>
+  <!-- gestor -->
+  <rect x="8" y="120" width="96" height="54" rx="8" fill="#f3f5f8" stroke="#b9c0cb"/>
+  <text x="56" y="143" text-anchor="middle" font-size="12" fill="#14171c">Gestor de</text>
+  <text x="56" y="158" text-anchor="middle" font-size="12" fill="#14171c">marketing</text>
+  <line x1="104" y1="147" x2="130" y2="147" stroke="#444" stroke-width="1.4" marker-end="url(#ar)"/>
+  <!-- chat -->
+  <rect x="132" y="120" width="118" height="54" rx="8" fill="#eef2fb" stroke="#8fa6d8"/>
+  <text x="191" y="143" text-anchor="middle" font-size="12" fill="#14171c">Chat agêntico</text>
+  <text x="191" y="158" text-anchor="middle" font-size="10.5" fill="#4b5568">(estilo Cursor)</text>
+  <line x1="250" y1="147" x2="284" y2="147" stroke="#444" stroke-width="1.4" marker-end="url(#ar)"/>
+  <!-- harness -->
+  <rect x="286" y="40" width="250" height="214" rx="12" fill="#f7f8fa" stroke="#3a4152" stroke-width="1.6"/>
+  <text x="411" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#1b2130" letter-spacing="1">HARNESS · runtime</text>
+  <rect x="300" y="74" width="222" height="34" rx="7" fill="#efeaf9" stroke="#7b5cd6"/>
+  <text x="312" y="95" font-size="11.5" fill="#3a2b63"><tspan font-weight="bold">1 · hidrata contexto</tspan> → ambiente</text>
+  <rect x="300" y="114" width="222" height="34" rx="7" fill="#e9f0fa" stroke="#2b6cb0"/>
+  <text x="312" y="135" font-size="11.5" fill="#1f3f66"><tspan font-weight="bold">2 · loop ReAct</tspan> → chama tools</text>
+  <rect x="300" y="154" width="222" height="34" rx="7" fill="#e6f3ec" stroke="#1f8a5b"/>
+  <text x="312" y="175" font-size="11.5" fill="#0f4b30"><tspan font-weight="bold">3 · invoca skills</tspan> → Apps</text>
+  <rect x="300" y="196" width="222" height="30" rx="7" fill="#20263400" stroke="#c2c8d2" stroke-dasharray="3 3"/>
+  <text x="411" y="215" text-anchor="middle" font-size="9.6" fill="#556">guard-rails: allowlist · max_steps · só-leitura</text>
+  <!-- layers -->
+  <rect x="586" y="44" width="228" height="56" rx="9" fill="#efeaf9" stroke="#7b5cd6" stroke-width="1.4"/>
+  <text x="600" y="66" font-size="11.5" font-weight="bold" fill="#3a2b63">Supercérebro</text>
+  <text x="600" y="82" font-size="10" fill="#4b4470">grafo + linha do tempo</text>
+  <text x="802" y="94" text-anchor="end" font-size="9" font-weight="bold" fill="#7b5cd6">MEMÓRIA · AMBIENTE</text>
+  <rect x="586" y="118" width="228" height="56" rx="9" fill="#e9f0fa" stroke="#2b6cb0" stroke-width="1.4"/>
+  <text x="600" y="140" font-size="11.5" font-weight="bold" fill="#1f3f66">APIs Meta / CRM</text>
+  <text x="600" y="156" font-size="10" fill="#3d5674">gasto, série, venda real</text>
+  <text x="802" y="168" text-anchor="end" font-size="9" font-weight="bold" fill="#2b6cb0">TOOLS</text>
+  <rect x="586" y="192" width="228" height="56" rx="9" fill="#e6f3ec" stroke="#1f8a5b" stroke-width="1.4"/>
+  <text x="600" y="214" font-size="11.5" font-weight="bold" fill="#0f4b30">Apps de metodologia</text>
+  <text x="600" y="230" font-size="10" fill="#2f6b4c">análise de criativo, mapa</text>
+  <text x="802" y="242" text-anchor="end" font-size="9" font-weight="bold" fill="#1f8a5b">SKILLS</text>
+  <!-- harness <-> layers -->
+  <line x1="536" y1="91" x2="584" y2="72" stroke="#444" stroke-width="1.2" marker-end="url(#ar)"/>
+  <line x1="536" y1="131" x2="584" y2="146" stroke="#444" stroke-width="1.2" marker-end="url(#ar)"/>
+  <line x1="536" y1="171" x2="584" y2="220" stroke="#444" stroke-width="1.2" marker-end="url(#ar)"/>
+  <line x1="584" y1="86" x2="536" y2="105" stroke="#8a93a5" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arD)"/>
+  <text x="560" y="30" text-anchor="middle" font-size="9" fill="#8a93a5">observações ⟳</text>
+  <!-- ação -->
+  <rect x="286" y="272" width="528" height="34" rx="9" fill="#f3f5f8" stroke="#b9c0cb"/>
+  <text x="550" y="293" text-anchor="middle" font-size="11" fill="#14171c">→ ação útil: <tspan font-weight="bold">ler · diagnosticar · propor</tspan>  (nunca escrever sem o humano)</text>
+  <line x1="411" y1="254" x2="411" y2="271" stroke="#444" stroke-width="1.4" marker-end="url(#ar)"/>
+</svg>
+
+  <figcaption><b>Figura 1.</b> O harness Tri-Camada. O gestor fala com o chat; o harness (1) hidrata a <span style="color:#7b5cd6"><b>memória</b></span> do supercérebro como ambiente antes do loop, (2) roda o loop ReAct chamando as <span style="color:#2b6cb0"><b>APIs</b></span> como tools e (3) invoca os <span style="color:#1f8a5b"><b>Apps</b></span> como skills de metodologia; guard-rails (allowlist, max_steps, só-leitura) cercam o loop. O que é <i>tool</i>: dado cru da operação. O que é <i>memória</i>: contexto temporal, injetado. O que é <i>app</i>: metodologia encapsulada, invocada.</figcaption>
+</figure>
+
+<h3>3.2. O que é tool, o que é memória, o que é app</h3>
+<p><b>Memória (supercérebro), hidratada como ambiente.</b> Antes do loop, o harness chama uma recuperação (<code>search_client_context</code> + <code>get_timeline</code>) semeada pela intenção e injeta um pacote compacto no <i>system prompt</i>. Durante o loop, o modelo ainda pode aprofundar (buscar uma ata com <code>search_conversations</code>). Memória é ambiente por padrão, tool sob demanda.</p>
+<p><b>API (Meta, CRM), tools clássicas.</b> Sem estado, chamadas dentro do loop: <code>list_ads</code> e <code>get_ad_insights</code> (gasto, série semanal, saturação), <code>get_leads</code> (venda real). O join Meta×CRM por <code>utm_content = ad_id</code> é trabalho do <i>agente</i>, não da tool: é aí que mora a inteligência de "não confiar só no gerenciador".</p>
+<p><b>App (metodologia), skills encapsuladas.</b> <code>run_app_analise_criativos</code> devolve ranking + recomendação (seguir/pausar/variar); <code>get_mapa_solucao</code> devolve a ficha da marca (o que não pode falar). O harness chama o app e usa a saída; não recria a metodologia no prompt. Isso mantém a metodologia versionável no produto e barata em tokens.</p>
+
+<h3>3.3. Trade-offs aceitos de propósito</h3>
+<ul>
+  <li><b>Fidelidade vs simplicidade:</b> a hidratação é uma recuperação simples (match no grafo + últimos N eventos), não um recuperador semântico com embeddings. Aceito recall menor por latência baixa e previsibilidade; num MVP, contexto errado é pior que contexto raso.</li>
+  <li><b>Latência vs profundidade:</b> <code>max_steps = 8</code> e allowlist fechada. Prefiro cortar cedo e responder com o que há a divagar.</li>
+  <li><b>Custo:</b> Apps como skills e <code>get_leads</code> com sumário cortam tokens; a metodologia não é reprocessada pelo LLM a cada turno.</li>
+  <li><b>Segurança:</b> só-leitura. Nenhuma tool escreve na conta (não pausa anúncio, não mexe em verba). O agente propõe; o humano executa. Remove a classe inteira de risco de ação indevida e é coerente com "o gestor decide".</li>
+  <li><b>Simplicidade do MVP:</b> um cliente, tools que leem mocks. Sem multi-tenant, sem auth, sem escrita.</li>
+</ul>
+
+<h2>4. Sistema</h2>
+<h3>4.1. O que o protótipo ilustra</h3>
+<p>Um chat web (estilo Cursor) roda o harness sobre um dataset mock da Housewhey. Cada turno mostra, num painel de <i>trace</i>, as fases do harness: hidratação do supercérebro (fase), depois as tool calls (com <i>badge</i> por camada: memória/api/app), com args e observação inspecionáveis, e a resposta ancorada nos números. Dois motores compartilham o mesmo trace: <b>(a) Simulado</b>, sem chave, um planejador roteirizado que executa as tools reais e compõe a resposta a partir do dado (prova que o dado sustenta a conclusão); <b>(b) LLM</b>, via OpenRouter, o loop ReAct de verdade decide as chamadas.</p>
+<p><b>Um turno concreto</b> (intent → memória/tools → observação → resposta), para <i>"o CPA do Ômega 3 subiu, diagnostique"</i>:</p>
+<ul>
+  <li><b>Hidratação:</b> nós do grafo (campanha Ômega 3, time, tarefa de aprovação) + timeline recente entram no prompt.</li>
+  <li><b>Loop:</b> <code>list_ads</code> (gasto por anúncio) → <code>get_leads</code> (venda real) → <code>get_ad_insights</code> (hook_rate 32%→18%, frequência 1,8→4,8) → <code>run_app_analise_criativos</code> (recomenda pausar).</li>
+  <li><b>Observações combinadas:</b> o criativo de depoimento tem CPA R$ 2.100 contra R$ 100 do antes/depois, saturou e sozinho estourou o orçamento (R$ 6.200 vs R$ 5.000).</li>
+  <li><b>Resposta:</b> causa raiz + próximo passo: pausar o depoimento resolve CPA, fadiga e verba de uma vez.</li>
+</ul>
+
+<h3>4.2. Datasets: o que é fake, o que dá para testar</h3>
+<p>Sete arquivos JSON (um cliente, cruzados: <code>ad_id = utm_content</code>, pessoas no grafo, timeline e WhatsApp). Cada arquivo é uma tool (Tabela 1). Tudo é fake, mas coerente ponta a ponta; <b>cinco problemas de gestão estão plantados e não rotulados</b>: CPA estourado, criativo saturado, origem declarada que mente contra o UTM, aprovação travada por <i>claim</i> proibido, e spend vs budget. O avaliador cola três prompts (relatório, diagnóstico, origem dos leads) e vê o harness orquestrar duas ou mais tools e chegar à conclusão sem que ela esteja escrita no dado.</p>
+
+<table class="t1 span-all">
+  <caption class="small" style="text-align:left;margin-bottom:3px"><b>Tabela 1.</b> Peças do harness: o que é cada uma e onde vive.</caption>
+  <tr><th>Peça (tool)</th><th>Camada</th><th>Papel na tese</th><th>Estado no protótipo</th></tr>
+  <tr><td class="mono">search_client_context</td><td>Supercérebro · grafo</td><td>Memória (ambiente): quem/o quê da conta</td><td>simulado sobre mock; visível no trace</td></tr>
+  <tr><td class="mono">get_timeline</td><td>Supercérebro · temporal</td><td>Memória (ambiente): histórico recente</td><td>simulado sobre mock; visível no trace</td></tr>
+  <tr><td class="mono">search_conversations</td><td>Memória de canal</td><td>Memória (sob demanda): o porquê (aprovação)</td><td>simulado sobre mock; visível no trace</td></tr>
+  <tr><td class="mono">list_ads / get_ad_insights</td><td>API · Meta Ads</td><td>Tool: gasto, série, saturação</td><td>simulado sobre mock; visível no trace</td></tr>
+  <tr><td class="mono">get_leads</td><td>API · CRM</td><td>Tool: venda real, atribuição</td><td>simulado sobre mock; visível no trace</td></tr>
+  <tr><td class="mono">run_app_analise_criativos</td><td>App · metodologia</td><td>Skill: ranking + recomendação</td><td>simulado sobre mock; visível no trace</td></tr>
+  <tr><td class="mono">get_mapa_solucao</td><td>App · marca</td><td>Skill: restrições ("não pode falar")</td><td>simulado sobre mock; visível no trace</td></tr>
+</table>
+
+<h3>4.3. OpenRouter e troca de modelo</h3>
+<p>No painel <span class="kbd">Configurar</span>, o avaliador escolhe o motor (Simulado ou LLM), cola a <code>OPENROUTER_API_KEY</code> (guardada só em <code>sessionStorage</code>, nunca num servidor) e digita o id do modelo (dropdown com sugestões que suportam tool-calling; campo livre). Trocar de modelo é trocar o texto do campo. O modo Simulado dispensa chave e serve o avaliador que só quer ver o harness orquestrar.</p>
+
+<h2>5. Notas de execução</h2>
+<p>PDF anexo (este). Demo opcional: chat web estático, roda de <code>file://</code> por duplo clique ou de qualquer host, sem backend. LLM via OpenRouter, chave só na sessão do browser. Dados mock gerados de forma determinística a partir do <code>dataset_prompt</code>. O que é fake: todas as métricas e nomes. O que "parece real": o cruzamento e o trace, porque as tools leem o mesmo dado que a resposta cita, e o avaliador pode abrir cada passo.</p>
+
+<h2>6. Limitações</h2>
+<p><b>Onde a solução quebra, por tarefa do gestor:</b></p>
+<ul>
+  <li><b>Relatório:</b> o join depende de <code>utm_content</code> limpo. No real, UTM faltando ou errado, múltiplos toques (last-click vs multi-touch) e janelas de atribuição divergentes entre Meta e CRM quebram o "custo por venda" exato. O mock tem UTM limpo; a conta real, não.</li>
+  <li><b>Diagnóstico:</b> a hidratação rasa (sem embeddings) pode não trazer o nó certo se a pergunta usa um sinônimo que não casa por substring. E o agente <i>correlaciona</i>, não prova causa: "o depoimento saturou" é leitura plausível, não teste estatístico.</li>
+  <li><b>Pauta:</b> depende de timeline e conversas populadas e datadas; com memória esparsa, a pauta fica genérica. O harness não sabe o que não foi registrado.</li>
+  <li><b>Criativos:</b> o App recomenda pausar/variar, mas o <i>brief</i> novo é gerado pelo LLM; sem o mapa de solução no contexto, ele pode propor copy que a marca não pode falar. Mitigo injetando <code>get_mapa_solucao</code>, mas não garanto.</li>
+</ul>
+<p>Além disso: só-leitura por escolha (não fecho o loop de execução); um cliente só (sem multi-tenant nem auth); memória mock, o grafo temporal de verdade (resolução de entidade, invalidação, decaimento) é o trabalho pesado que fica de fora.</p>
+<p><b>Com mais uma semana</b> eu construiria: (a) recuperação de memória de verdade, um grafo temporal com embeddings e decaimento (no espírito de Graphiti/Zep [4]), para a hidratação parar de depender de match por substring; (b) uma tool isolada de verificação numérica, o único lugar onde um mini-sandbox se paga, para o join Meta×CRM ficar auditável; (c) confirmação de escrita (pausar anúncio) com o humano no meio. <b>O que eu deliberadamente não construiria:</b> um grafo de controle por cima do chat (mata a abertura da tarefa), execução de código arbitrário no MVP (risco sem retorno) e memória de longo prazo que aprende sozinha sem revisão, porque num domínio com o dinheiro do cliente, contexto errado propaga erro.</p>
+
+<div class="refs">
+<h2>Referências</h2>
+<ol>
+  <li>OpenHands. <i>The OpenHands Software Agent SDK.</i> arXiv:2511.03690, 2026.</li>
+  <li>S. Yao et al. <i>ReAct: Synergizing Reasoning and Acting in Language Models.</i> arXiv:2210.03629, 2023.</li>
+  <li>X. Wang et al. <i>Executable Code Actions Elicit Better LLM Agents</i> (CodeAct). arXiv:2402.01030, 2024.</li>
+  <li>P. Rasmussen et al. <i>Zep / Graphiti: memória de agente por grafo de conhecimento temporal.</i> 2025.</li>
+  <li>Anthropic. <i>Building Effective Agents.</i> Nota de engenharia, 2024.</li>
+</ol>
+</div>
+
+<p class="footer-note">Documento do candidato para o Desafio Harness Agêntico da AdzHub. Nomes de cliente, tools e métricas são ficção ilustrativa (mock Housewhey).</p>
+
+</div>
+</body>
+</html>

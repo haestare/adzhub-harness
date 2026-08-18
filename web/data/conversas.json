@@ -1,0 +1,78 @@
+{
+  "client_id": "cli_housewhey",
+  "threads": [
+    {
+      "id": "conv_call_68",
+      "tipo": "reuniao",
+      "canal": "Google Meet",
+      "occurred_at": "2026-08-08T10:00:00-03:00",
+      "participantes": [
+        "p_carolina",
+        "p_aline",
+        "p_rodrigo"
+      ],
+      "titulo": "Ata - Call semanal Housewhey",
+      "bullets": [
+        "Carolina: custo por venda do Ômega 3 subiu nas últimas 2 semanas; Rodrigo quer saber QUAL anúncio está puxando o custo.",
+        "Aline: o vídeo de depoimento roda há semanas no mesmo público; suspeita de desgaste, mas falta cruzar com venda real do CRM.",
+        "Rodrigo: 'no Gerenciador aparece bastante resultado, mas minha venda não acompanhou'.",
+        "Creatina: peças ainda não aprovadas. Rodrigo pediu revisão de uma frase antes de liberar.",
+        "Combinado: SPOT traz na próxima call o relatório de criativo x venda e uma proposta de realocação de verba."
+      ]
+    },
+    {
+      "id": "conv_wpp_rodrigo",
+      "tipo": "whatsapp",
+      "canal": "WhatsApp",
+      "occurred_at": "2026-08-09T19:12:00-03:00",
+      "participantes": [
+        "p_carolina",
+        "p_rodrigo"
+      ],
+      "titulo": "WhatsApp - Carolina e Rodrigo (aprovação Creatina)",
+      "mensagens": [
+        {
+          "de": "p_carolina",
+          "texto": "Rodrigo, seguem as duas peças de Creatina pra aprovar. Assim que liberar eu subo ainda essa semana."
+        },
+        {
+          "de": "p_rodrigo",
+          "texto": "Vi aqui. Só não curti o 'resultado garantido' no vídeo, acho que a gente não pode falar isso né?"
+        },
+        {
+          "de": "p_carolina",
+          "texto": "Isso, melhor ajustar essa frase mesmo. Te devolvo a versão corrigida pra liberar."
+        },
+        {
+          "de": "p_rodrigo",
+          "texto": "Fechou, me manda que aprovo rápido."
+        }
+      ]
+    },
+    {
+      "id": "conv_wpp_luiza",
+      "tipo": "whatsapp",
+      "canal": "WhatsApp",
+      "occurred_at": "2026-08-03T14:20:00-03:00",
+      "participantes": [
+        "p_luiza",
+        "p_carolina"
+      ],
+      "titulo": "WhatsApp - Luiza e Carolina (origem dos leads)",
+      "mensagens": [
+        {
+          "de": "p_luiza",
+          "texto": "Caro, tá vindo bastante lead falando que achou a gente no Google. Mas a gente quase não roda Google, né?"
+        },
+        {
+          "de": "p_carolina",
+          "texto": "Quase nada. O grosso é Meta. Deixa eu ver se o pessoal tá confundindo por causa do vídeo do Whey que tá bombando."
+        },
+        {
+          "de": "p_luiza",
+          "texto": "Pode ser. Quando pergunto de novo, muita gente lembra de um vídeo no Instagram."
+        }
+      ]
+    }
+  ]
+}

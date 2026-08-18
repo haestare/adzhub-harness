@@ -1,0 +1,291 @@
+{
+  "client_id": "cli_housewhey",
+  "generated_note": "Recorte de memoria da operacao. Use search_client_context para trazer so o relevante.",
+  "nodes": [
+    {
+      "id": "hub_spot",
+      "type": "hub",
+      "label": "SPOT",
+      "props": {
+        "kind": "agencia"
+      }
+    },
+    {
+      "id": "cli_housewhey",
+      "type": "hub",
+      "label": "Housewhey",
+      "props": {
+        "segmento": "e-commerce de suplementos",
+        "ticket_medio_brl": 179,
+        "entrou_em": "2026-06-04"
+      }
+    },
+    {
+      "id": "p_aline",
+      "type": "person",
+      "label": "Aline",
+      "props": {
+        "role": "tráfego",
+        "canais": [
+          "Meta Ads",
+          "Google Ads"
+        ]
+      }
+    },
+    {
+      "id": "p_carolina",
+      "type": "person",
+      "label": "Carolina",
+      "props": {
+        "role": "gestão de conta",
+        "responsavel_por": "KPIs e relação com cliente"
+      }
+    },
+    {
+      "id": "p_luiza",
+      "type": "person",
+      "label": "Luiza",
+      "props": {
+        "role": "atendimento/WhatsApp",
+        "responsavel_por": "qualificação de leads"
+      }
+    },
+    {
+      "id": "p_rodrigo",
+      "type": "person",
+      "label": "Rodrigo",
+      "props": {
+        "role": "cliente (dono da Housewhey)"
+      }
+    },
+    {
+      "id": "ch_meta",
+      "type": "channel",
+      "label": "Meta Ads",
+      "props": {}
+    },
+    {
+      "id": "ch_google",
+      "type": "channel",
+      "label": "Google Ads",
+      "props": {
+        "observacao": "verba baixa, quase parado"
+      }
+    },
+    {
+      "id": "ch_crm",
+      "type": "channel",
+      "label": "CRM",
+      "props": {
+        "ferramenta": "RD Station"
+      }
+    },
+    {
+      "id": "ch_whatsapp",
+      "type": "channel",
+      "label": "WhatsApp",
+      "props": {}
+    },
+    {
+      "id": "camp_namorados",
+      "type": "campaign",
+      "label": "Dia dos Namorados",
+      "props": {
+        "status": "encerrada",
+        "janela": "mai-jun/2026",
+        "aprendizado": "kits de presente performaram melhor que produto avulso"
+      }
+    },
+    {
+      "id": "camp_omega3",
+      "type": "campaign",
+      "label": "Ômega 3 - Saúde em Dia",
+      "props": {
+        "status": "ativa",
+        "foco_atual": true,
+        "monthly_budget_brl": 5000
+      }
+    },
+    {
+      "id": "camp_whey",
+      "type": "campaign",
+      "label": "Whey Sempre",
+      "props": {
+        "status": "ativa",
+        "tipo": "evergreen"
+      }
+    },
+    {
+      "id": "camp_creatina",
+      "type": "campaign",
+      "label": "Creatina - Foco Total",
+      "props": {
+        "status": "em aprovação",
+        "observacao": "pecas aguardando cliente desde 2026-08-06"
+      }
+    },
+    {
+      "id": "asset_creatina_foco",
+      "type": "asset",
+      "label": "Vídeo Creatina 'Foco Total'",
+      "props": {
+        "formato": "video",
+        "status": "aguardando aprovação"
+      }
+    },
+    {
+      "id": "asset_creatina_benef",
+      "type": "asset",
+      "label": "Imagem Creatina 'Benefícios'",
+      "props": {
+        "formato": "imagem",
+        "status": "aguardando aprovação"
+      }
+    },
+    {
+      "id": "asset_omega3_depo",
+      "type": "asset",
+      "label": "Vídeo Depoimento Ana",
+      "props": {
+        "formato": "video",
+        "no_ar_desde": "2026-07-06"
+      }
+    },
+    {
+      "id": "task_aprovar_creatina",
+      "type": "task",
+      "label": "Aprovar peças de Creatina",
+      "props": {
+        "status": "aberta",
+        "dono": "p_rodrigo",
+        "aberta_em": "2026-08-06"
+      }
+    },
+    {
+      "id": "meet_semanal",
+      "type": "meeting",
+      "label": "Call semanal Housewhey",
+      "props": {
+        "recorrencia": "quinzenal",
+        "ultima": "2026-08-08"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "p_aline",
+      "to": "hub_spot",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "p_carolina",
+      "to": "hub_spot",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "p_luiza",
+      "to": "hub_spot",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "hub_spot",
+      "to": "cli_housewhey",
+      "rel": "OPERATES"
+    },
+    {
+      "from": "p_aline",
+      "to": "ch_meta",
+      "rel": "OPERATES"
+    },
+    {
+      "from": "p_aline",
+      "to": "ch_google",
+      "rel": "OPERATES"
+    },
+    {
+      "from": "p_luiza",
+      "to": "ch_whatsapp",
+      "rel": "OPERATES"
+    },
+    {
+      "from": "p_carolina",
+      "to": "camp_omega3",
+      "rel": "TRACKS"
+    },
+    {
+      "from": "p_carolina",
+      "to": "camp_whey",
+      "rel": "TRACKS"
+    },
+    {
+      "from": "camp_namorados",
+      "to": "cli_housewhey",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "camp_omega3",
+      "to": "cli_housewhey",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "camp_whey",
+      "to": "cli_housewhey",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "camp_creatina",
+      "to": "cli_housewhey",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "camp_omega3",
+      "to": "ch_meta",
+      "rel": "TRACKS"
+    },
+    {
+      "from": "camp_whey",
+      "to": "ch_meta",
+      "rel": "TRACKS"
+    },
+    {
+      "from": "asset_omega3_depo",
+      "to": "camp_omega3",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "asset_creatina_foco",
+      "to": "camp_creatina",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "asset_creatina_benef",
+      "to": "camp_creatina",
+      "rel": "MEMBER_OF"
+    },
+    {
+      "from": "p_rodrigo",
+      "to": "asset_creatina_foco",
+      "rel": "APPROVES"
+    },
+    {
+      "from": "p_rodrigo",
+      "to": "asset_creatina_benef",
+      "rel": "APPROVES"
+    },
+    {
+      "from": "task_aprovar_creatina",
+      "to": "camp_creatina",
+      "rel": "MENTIONS"
+    },
+    {
+      "from": "meet_semanal",
+      "to": "camp_omega3",
+      "rel": "MENTIONS"
+    },
+    {
+      "from": "meet_semanal",
+      "to": "camp_creatina",
+      "rel": "MENTIONS"
+    }
+  ]
+}

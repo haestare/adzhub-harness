@@ -1,0 +1,324 @@
+{
+  "client_id": "cli_housewhey",
+  "currency": "BRL",
+  "period": {
+    "since": "2026-07-01",
+    "until": "2026-08-15"
+  },
+  "note": "meta_reported_conversions e o que o Gerenciador atribui (inclui view-through). A verdade de venda esta no CRM.",
+  "campaigns": [
+    {
+      "campaign_id": "camp_omega3",
+      "name": "Ômega 3 - Saúde em Dia",
+      "objective": "conversions",
+      "status": "active",
+      "monthly_budget_brl": 5000,
+      "adsets": [
+        {
+          "adset_id": "as_omega3_frio",
+          "name": "Ômega 3 · Público Frio",
+          "status": "active",
+          "daily_budget_brl": 150,
+          "optimization": "leads",
+          "ads": [
+            {
+              "ad_id": "ad_omega3_depoimento",
+              "ad_name": "Depoimento Ana - Ômega 3",
+              "creative_type": "video",
+              "audience": "frio",
+              "status": "active",
+              "spend_brl": 4200.0,
+              "impressions": 210000,
+              "clicks": 2100,
+              "ctr_pct": 1.0,
+              "cpc_brl": 2.0,
+              "hook_rate_pct": 18.0,
+              "frequency": 4.8,
+              "meta_reported_conversions": 14,
+              "utm_content": "ad_omega3_depoimento",
+              "insights": {
+                "series_weekly": [
+                  {
+                    "week": "2026-07-06",
+                    "spend": 760,
+                    "impressions": 48000,
+                    "clicks": 610,
+                    "hook_rate_pct": 32.0,
+                    "frequency": 1.8
+                  },
+                  {
+                    "week": "2026-07-13",
+                    "spend": 980,
+                    "impressions": 52000,
+                    "clicks": 540,
+                    "hook_rate_pct": 27.0,
+                    "frequency": 2.6
+                  },
+                  {
+                    "week": "2026-07-20",
+                    "spend": 1150,
+                    "impressions": 55000,
+                    "clicks": 470,
+                    "hook_rate_pct": 21.0,
+                    "frequency": 3.7
+                  },
+                  {
+                    "week": "2026-07-27",
+                    "spend": 1310,
+                    "impressions": 55000,
+                    "clicks": 480,
+                    "hook_rate_pct": 18.0,
+                    "frequency": 4.8
+                  }
+                ]
+              }
+            },
+            {
+              "ad_id": "ad_omega3_antesdepois",
+              "ad_name": "Antes e Depois - Ômega 3",
+              "creative_type": "imagem",
+              "audience": "frio",
+              "status": "active",
+              "spend_brl": 900.0,
+              "impressions": 60000,
+              "clicks": 1200,
+              "ctr_pct": 2.0,
+              "cpc_brl": 0.75,
+              "hook_rate_pct": 41.0,
+              "frequency": 1.6,
+              "meta_reported_conversions": 11,
+              "utm_content": "ad_omega3_antesdepois",
+              "insights": {
+                "series_weekly": [
+                  {
+                    "week": "2026-07-06",
+                    "spend": 210,
+                    "impressions": 14000,
+                    "clicks": 270,
+                    "hook_rate_pct": 39.0,
+                    "frequency": 1.2
+                  },
+                  {
+                    "week": "2026-07-13",
+                    "spend": 225,
+                    "impressions": 15000,
+                    "clicks": 300,
+                    "hook_rate_pct": 41.0,
+                    "frequency": 1.4
+                  },
+                  {
+                    "week": "2026-07-20",
+                    "spend": 230,
+                    "impressions": 15500,
+                    "clicks": 315,
+                    "hook_rate_pct": 42.0,
+                    "frequency": 1.5
+                  },
+                  {
+                    "week": "2026-07-27",
+                    "spend": 235,
+                    "impressions": 15500,
+                    "clicks": 315,
+                    "hook_rate_pct": 41.0,
+                    "frequency": 1.6
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "adset_id": "as_omega3_remkt",
+          "name": "Ômega 3 · Remarketing",
+          "status": "active",
+          "daily_budget_brl": 40,
+          "optimization": "leads",
+          "ads": [
+            {
+              "ad_id": "ad_omega3_oferta",
+              "ad_name": "Oferta 3 potes - Ômega 3",
+              "creative_type": "carrossel",
+              "audience": "remarketing",
+              "status": "active",
+              "spend_brl": 1100.0,
+              "impressions": 30000,
+              "clicks": 900,
+              "ctr_pct": 3.0,
+              "cpc_brl": 1.22,
+              "hook_rate_pct": 26.0,
+              "frequency": 3.1,
+              "meta_reported_conversions": 9,
+              "utm_content": "ad_omega3_oferta",
+              "insights": {
+                "series_weekly": [
+                  {
+                    "week": "2026-07-06",
+                    "spend": 250,
+                    "impressions": 7000,
+                    "clicks": 210,
+                    "hook_rate_pct": 27.0,
+                    "frequency": 2.4
+                  },
+                  {
+                    "week": "2026-07-27",
+                    "spend": 300,
+                    "impressions": 8000,
+                    "clicks": 230,
+                    "hook_rate_pct": 25.0,
+                    "frequency": 3.1
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "campaign_id": "camp_whey",
+      "name": "Whey Sempre",
+      "objective": "leads",
+      "status": "active",
+      "monthly_budget_brl": 4000,
+      "adsets": [
+        {
+          "adset_id": "as_whey_frio",
+          "name": "Whey · Público Frio",
+          "status": "active",
+          "daily_budget_brl": 120,
+          "optimization": "leads",
+          "ads": [
+            {
+              "ad_id": "ad_whey_sacola",
+              "ad_name": "Sacola cheia - Whey",
+              "creative_type": "imagem",
+              "audience": "frio",
+              "status": "active",
+              "spend_brl": 1600.0,
+              "impressions": 90000,
+              "clicks": 1400,
+              "ctr_pct": 1.56,
+              "cpc_brl": 1.14,
+              "hook_rate_pct": 22.0,
+              "frequency": 2.2,
+              "meta_reported_conversions": 10,
+              "utm_content": "ad_whey_sacola",
+              "insights": {
+                "series_weekly": [
+                  {
+                    "week": "2026-07-11",
+                    "spend": 520,
+                    "impressions": 30000,
+                    "clicks": 470,
+                    "hook_rate_pct": 23.0,
+                    "frequency": 1.9
+                  },
+                  {
+                    "week": "2026-07-27",
+                    "spend": 540,
+                    "impressions": 30000,
+                    "clicks": 460,
+                    "hook_rate_pct": 21.0,
+                    "frequency": 2.2
+                  }
+                ]
+              }
+            },
+            {
+              "ad_id": "ad_whey_ugc",
+              "ad_name": "UGC 'minha rotina' - Whey",
+              "creative_type": "video",
+              "audience": "frio",
+              "status": "active",
+              "spend_brl": 2000.0,
+              "impressions": 120000,
+              "clicks": 2600,
+              "ctr_pct": 2.17,
+              "cpc_brl": 0.77,
+              "hook_rate_pct": 35.0,
+              "frequency": 2.0,
+              "meta_reported_conversions": 22,
+              "utm_content": "ad_whey_ugc",
+              "insights": {
+                "series_weekly": [
+                  {
+                    "week": "2026-07-11",
+                    "spend": 640,
+                    "impressions": 39000,
+                    "clicks": 860,
+                    "hook_rate_pct": 36.0,
+                    "frequency": 1.6
+                  },
+                  {
+                    "week": "2026-07-27",
+                    "spend": 690,
+                    "impressions": 41000,
+                    "clicks": 870,
+                    "hook_rate_pct": 34.0,
+                    "frequency": 2.0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "campaign_id": "camp_creatina",
+      "name": "Creatina - Foco Total",
+      "objective": "conversions",
+      "status": "in_review",
+      "monthly_budget_brl": 0,
+      "adsets": [
+        {
+          "adset_id": "as_creatina_lanc",
+          "name": "Creatina · Lançamento",
+          "status": "paused",
+          "daily_budget_brl": 0,
+          "optimization": "leads",
+          "ads": [
+            {
+              "ad_id": "ad_creatina_foco",
+              "ad_name": "Vídeo Foco Total - Creatina",
+              "creative_type": "video",
+              "audience": "frio",
+              "status": "in_review",
+              "spend_brl": 0.0,
+              "impressions": 0,
+              "clicks": 0,
+              "ctr_pct": 0.0,
+              "cpc_brl": 0.0,
+              "hook_rate_pct": 0.0,
+              "frequency": 0.0,
+              "meta_reported_conversions": 0,
+              "utm_content": "ad_creatina_foco",
+              "insights": {
+                "series_weekly": []
+              }
+            },
+            {
+              "ad_id": "ad_creatina_benef",
+              "ad_name": "Benefícios - Creatina",
+              "creative_type": "imagem",
+              "audience": "frio",
+              "status": "in_review",
+              "spend_brl": 0.0,
+              "impressions": 0,
+              "clicks": 0,
+              "ctr_pct": 0.0,
+              "cpc_brl": 0.0,
+              "hook_rate_pct": 0.0,
+              "frequency": 0.0,
+              "meta_reported_conversions": 0,
+              "utm_content": "ad_creatina_benef",
+              "insights": {
+                "series_weekly": []
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

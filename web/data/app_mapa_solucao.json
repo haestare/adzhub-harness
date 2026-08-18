@@ -1,0 +1,26 @@
+{
+  "client_id": "cli_housewhey",
+  "app": "mapa_solucao",
+  "atualizado_em": "2026-07-31",
+  "marca": "Housewhey",
+  "oferta": "Suplementos para o dia a dia: Whey Protein, Ômega 3, Creatina e multivitamínicos. Venda direta pelo site com atendimento no WhatsApp.",
+  "promessa": "Constância simples: suplemento de qualidade, entrega rápida e acompanhamento humano.",
+  "prova": [
+    "+40 mil pedidos entregues",
+    "Selo de qualidade e laudo dos lotes",
+    "Avaliações reais de clientes no site"
+  ],
+  "objeções": [
+    "'Será que funciona pra mim?'",
+    "Preço vs concorrente de marketplace",
+    "Prazo e custo de entrega",
+    "Medo de sabor ruim"
+  ],
+  "tom_de_voz": "Próximo, direto e sem hype. Fala de rotina, não de milagre.",
+  "nao_pode_falar": [
+    "Não prometer cura ou tratamento de doença (restrição sanitária/ANVISA).",
+    "Não garantir emagrecimento ou ganho de massa em prazo determinado.",
+    "Evitar 'antes e depois' que sugira resultado garantido; usar prova social com ressalva."
+  ],
+  "observacao_operacional": "As peças de Creatina em aprovação usam a palavra 'resultado garantido' e por isso estão em revisão com o cliente."
+}

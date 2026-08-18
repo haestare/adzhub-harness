@@ -1,0 +1,46 @@
+# Publica a demo no GitHub Pages a cada push na main.
+#
+# Por que existe, se já há Railway: o Railway parou de redeployar sozinho e a
+# demo ficou dias servindo uma versão antiga sem avisar. Este caminho não tem
+# watch path para configurar errado nem build para falhar em silêncio: o Action
+# roda no push, e o log do próprio GitHub diz se subiu.
+#
+# A demo é 100% estática (o server.js só existe para hosts que rodam processo),
+# então o Pages serve ela inteira. O carimbo de cache-busting, que no Railway é
+# feito pelo servidor, aqui é feito em build time por .github/carimbar.mjs.
+name: Publicar demo (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # permite disparar na mão pelo botão Run workflow
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Carimbar assets (cache-busting + build visível na tela)
+        run: node .github/carimbar.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web           # só a demo vai para o ar, não o paper nem os scripts
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

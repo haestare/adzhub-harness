@@ -45,6 +45,20 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | URL da demo | https://adzhub-harness-production.up.railway.app |
 | Notas | só-leitura por design, dados mock, 5 problemas plantados não rotulados, modo simulado + LLM/OpenRouter |
 
+## Estado do protótipo (o que o avaliador encontra)
+
+| Recurso | Situação |
+|---|---|
+| Persona própria (NEXO), fora do runtime | ✅ `web/js/nexo.js` |
+| Trace do harness com badge por camada e agrupamento `N×` | ✅ |
+| Medidor de tokens (por chamada, por turno, por sessão) | ✅ medido no LLM, estimado com ≈ no simulado |
+| Streaming SSE real, com `tool_calls` remontados | ✅ |
+| Tabelas estilo Ads Manager + títulos h1-h3 | ✅ `build/test_md.js` trava a regressão |
+| Tema claro/escuro persistente | ✅ |
+| Comandos de barra (10, com paleta) | ✅ `/tools` e `/uso` deixam o harness inspecionável |
+| Dropdown de modelos ranqueado (#1 = mais forte), lista viva da API | ✅ fallback local sem rede |
+| Deploy automático a cada commit | ✅ `.githooks/post-commit` + hook `Stop` |
+
 ## Melhorias já aplicadas nesta revisão
 - Paper: citação do RLM (arXiv:2512.24601) e nod ao GraphRAG, que a página lista.
 - Protótipo: o agente agora é instruído a usar **tabela** para dados comparativos (não lista aninhada).

@@ -74,8 +74,20 @@ no runtime**: o que vira tool, o que vira memória, o que vira skill."
 **2.1 (As peças do exoesqueleto)** nomeia as seis partes de um harness pelo que elas **fazem no
 trabalho do gestor**, não por jargão: o ciclo de passos, as mãos (tools), o tato (observação), a
 memória, as travas (allowlist e teto de passos) e o que sobrevive entre as voltas (estado).
-**2.2** lê o domínio AdzHub em três camadas (supercérebro / Apps / APIs) e crava a observação
-central: essas camadas têm **naturezas diferentes**.
+**2.2** lê o domínio AdzHub em três camadas (supercérebro / Apps / APIs), crava a observação
+central (essas camadas têm **naturezas diferentes**) e destrincha as quatro decisões que vêm
+disso: por que o supercérebro é **grafo** e não tabela (o que importa está na ligação, não no
+registro), por que a linha do tempo é **camada** e não campo de data (fato de operação vence, e
+memória que só acumula responde com o fato revogado), por que um **App não é só mais uma tool**
+(tool carrega dado, App carrega opinião do negócio; metodologia no prompt custa token, perde
+consistência e deixa de ser versionável) e o que os **canais** mudam (WhatsApp é onde mora o
+porquê; Meta, CRM e Analytics contam a mesma venda de três jeitos, e o desenho expõe a
+divergência em vez de eleger um vencedor em silêncio).
+**2.3 (Cinco famílias de harness)** é a seção de estudo: o que cada família de fato propõe
+(ReAct, CodeAct/sandbox, sessão com permissões e skills, orquestração por grafo, contexto como
+ambiente), e a **Tabela 1** põe as cinco lado a lado com quatro colunas, sendo que a que decide é
+**"onde falha no chat do gestor"**. É ela que explica por que a resposta não é escolher uma
+família, e sim compor.
 **Por que está aí:** o resto do paper precisa dessas palavras. Mas glossário seco não convence
 ninguém, então cada peça vem colada numa cena real (abrir o Gerenciador, ver o CPA, abrir o CRM).
 **Como defender:** "O exoesqueleto tem seis peças, e nenhuma delas está no modelo: todas são do
@@ -84,8 +96,11 @@ runtime em volta. É por isso que dois produtos com o mesmo LLM entregam agentes
 de ideia no meio do caminho, quando o CRM mostra 2 vendas onde o Meta prometia 14.
 
 ### 3. Arquitetura (o coração)
-**3.1** declara a escolha (híbrido próprio, núcleo ReAct) e **justifica contra cada uma das 5
-referências**, não só descreve a minha. Isso é o que a pergunta 4 pede.
+**3.1** argumenta a **composição**: o veredito família por família já está na Tabela 1 (§2.3), e
+aqui o texto defende por que cada camada recebe um mecanismo diferente (núcleo ReAct porque a
+tarefa é aberta, memória fora do loop porque toda pergunta pressupõe histórico, Apps como skills
+porque metodologia é produto e não prompt). Isso é o que a pergunta 4 pede. A frase que fecha:
+*a tese não está em nenhuma das três escolhas isoladas, está na composição*.
 **3.2** responde a pergunta 5 (o que é tool, o que é memória, o que é app), item por item.
 **3.3** lista os trade-offs aceitos de propósito (pergunta 6).
 **Figura 1** desenha tudo: gestor → chat → harness (hidrata / loop / skills) → 3 camadas → ação.
@@ -105,8 +120,12 @@ referências**, não só descreve a minha. Isso é o que a pergunta 4 pede.
 ### 4. Sistema (o que o protótipo ilustra)
 **O que diz:** descreve o protótipo (dois motores: simulado e LLM), o trace visível, e um **turno
 concreto** (intent → hidratação → tools → observação → resposta) para o diagnóstico do Ômega 3.
-Tem a **Tabela 1** (cada peça: tool/memória/app, papel, onde vive) e explica os datasets e o
-campo de OpenRouter.
+Tem o **Quadro 1** (o custo real de um turno de 5 passos, medido passo a passo), a **Tabela 2**
+(cada peça: tool/memória/app, papel, onde vive) e explica os datasets e o campo de OpenRouter.
+**O Quadro 1 é o achado próprio do trabalho** e vale destacar na conversa: a entrada vai de 2,9k
+a 11,3k tokens dentro de um único turno, contra ~434 de saída, porque cada passo reenvia a
+conversa inteira mais todas as observações já colhidas. A consequência prática é de projeto: uma
+tool que devolve JSON cru não custa uma vez, custa uma vez por passo restante do turno.
 **Por que está aí:** responde as perguntas 8 (o que o protótipo ilustra), 9 (datasets, o que é
 fake) e 10 (OpenRouter na UI).
 **Como defender:** "O protótipo não executa a infra do paper. Ele **simula** o resultado: as tools
@@ -116,11 +135,22 @@ leem um mock cruzado, e o trace mostra o harness orquestrar. O avaliador vê a t
 **O que diz:** PDF, demo estática, OpenRouter com key só no browser, dados mock determinísticos.
 **Por que está aí:** deixa claro o que é real e o que é fake, sem inventar métricas.
 
-### 6. Limitações (a seção que dá credibilidade)
-**O que diz:** onde a solução **quebra**, tarefa por tarefa do gestor (relatório, diagnóstico,
-pauta, criativos). E "com mais uma semana eu faria X, e deliberadamente NÃO faria Y".
-**Por que está aí:** responde a pergunta 7 (onde quebra) e a 11 (próxima semana). Gaps honestos
-valem pontos: mostram que você conhece os limites.
+### 6. Pontos críticos por tarefa do gestor (a seção que dá credibilidade)
+**O que diz:** percorre as **sete tarefas** do dia a dia (insight da semana, diagnóstico, análise
+de criativos, brief de criativo, mapa de solução, pauta de call, responder o cliente) e, em cada
+uma, diz o que o harness faz, onde ele quebra e o que no desenho mitiga, com a coluna final
+sempre dizendo também **o que ele não resolve**. É a **Tabela 3**. Depois, os dois casos mais
+graves ganham parágrafo: atribuição (no relatório) e correlação confundida com causa (no
+diagnóstico).
+**Por que está aí:** o critério de avaliação pergunta isso com todas as letras ("existem pontos
+críticos na solução proposta em relação aos tipos de tarefas do dia a dia do gestor?"). Gaps
+honestos valem pontos: mostram que você conhece os limites.
+
+### 7. Limitações e próximos passos
+**O que diz:** o que fica de fora por escolha (só-leitura, um cliente, memória mock, política de
+compactação de contexto em sessão longa) e "com mais uma semana eu faria X, e deliberadamente
+NÃO faria Y".
+**Por que está aí:** responde a pergunta 11.
 **Como defender:** "O join Meta x CRM depende de UTM limpo; no mundo real UTM falta e a atribuição
 diverge. A hidratação rasa pode não achar o nó certo por sinônimo. O agente correlaciona, não
 prova causa."
@@ -138,14 +168,14 @@ decisão. Só citei o que de fato usei.
 | 1 | Qual a tese? | Abstract + §1 (frase de tese) |
 | 2 | O que deixa de ser chatbot e vira agente? | §1 (modelo vs harness) + §3.2 |
 | 3 | O que você achava e o que mudou? | §1 (segundo parágrafo) |
-| 4 | Qual abordagem escolheu e por quê vs as outras? | §3.1 (justifica contra as 5) |
-| 5 | Como conversa com supercérebro/Apps/APIs? O que é tool/memória/app? | §3.2 |
+| 4 | Qual abordagem escolheu e por quê vs as outras? | §2.3 + Tabela 1 (veredito das 5) e §3.1 (a composição) |
+| 5 | Como conversa com supercérebro/Apps/APIs? O que é tool/memória/app? | §2.2 (as naturezas) + §3.2 (o mecanismo) |
 | 6 | Trade-offs aceitos de propósito | §3.3 |
-| 7 | Onde a solução quebra nas tarefas reais | §6 (por tarefa) |
+| 7 | Onde a solução quebra nas tarefas reais | §6 + Tabela 3 (7 tarefas) |
 | 8 | O que o protótipo ilustra vs só no paper | §4.1 |
-| 9 | Datasets, o que é fake, o que dá pra testar | §4.2 + Tabela 1 |
+| 9 | Datasets, o que é fake, o que dá pra testar | §4.2 + Tabela 2 |
 | 10 | Como colar a OPENROUTER_API_KEY e trocar modelo | §4.3 |
-| 11 | Com mais uma semana, o que faria / não faria | §6 (final) |
+| 11 | Com mais uma semana, o que faria / não faria | §7 (final) |
 
 ---
 
@@ -226,3 +256,48 @@ Nenhum está rotulado no dado.
 
 O ponto que impressiona: **um único achado (pausar o depoimento) costura três sintomas.** Isso é
 o que separa um agente de um chatbot que responde uma pergunta por vez.
+
+---
+
+## Como editar o paper (mecânica)
+
+A fonte é **`paper/paper.html`**, HTML puro com o layout de duas colunas em CSS. O PDF é gerado
+por um comando só, sem LaTeX e sem dependência:
+
+```
+chromium --headless --disable-gpu --no-sandbox \
+  --print-to-pdf=paper/paper.pdf --no-pdf-header-footer "file://$PWD/paper/paper.html"
+```
+
+Três coisas que vale saber antes de mexer:
+
+- **Onde escrever.** Texto corrido vai em `<p>`, seção em `<h2>`, subseção em `<h3>`. O corpo
+  inteiro vive dentro de `<div class="paper">`, que é o que cria as duas colunas.
+- **Elemento largo atravessa as colunas** com a classe `span-all` (é o caso da Figura 1, do
+  Quadro 1 e das três tabelas). Sem ela, uma tabela larga fica espremida em meia página.
+- **Legenda e tabela precisam ficar juntas.** Tabela dentro de `<div class="bloco-tabela">`
+  não se separa da legenda na quebra de página. Isso não é preciosismo: sem o bloco, a legenda
+  da Tabela 1 ficou órfã no fim de uma página e a tabela apareceu sozinha na seguinte.
+
+Depois de gerar, confira o resultado **como página**, não como código: 6 páginas, abaixo de
+3 MB, e nenhuma tabela cortada no meio. Um jeito rápido de olhar página a página:
+
+```
+python3 -c "import pymupdf; d=pymupdf.open('paper/paper.pdf'); \
+  [p.get_pixmap(dpi=105).save(f'pg{i+1}.png') for i,p in enumerate(d)]"
+```
+
+---
+
+## Pendente (decisão sua)
+
+Três assuntos ficaram **de fora por escolha**, não por esquecimento, e cada um renderia meia
+página na linha de "aprofundamento no estudo":
+
+1. **Gestão de contexto em sessão longa.** O que é descartado quando a conversa passa de 40
+   mensagens (compactação, sumarização, o que nunca pode sair). É a consequência direta do
+   número do Quadro 1, e hoje o paper só admite a lacuna no §7.
+2. **Como saber se o harness funciona.** Traces de referência, regressão de comportamento,
+   o que se mede quando a saída é texto. É o assunto que mais sinaliza vaga fundacional.
+3. **Falha de tool e paralelismo.** API que erra, rate limit, dado parcial, e duas tools que
+   poderiam rodar ao mesmo tempo. Hoje o paper não fala de erro em nenhum lugar.

@@ -7,11 +7,12 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Requisito | Status |
 |---|---|
 | PDF, máx. 3 MB, português | ✅ 318 KB |
-| Curto, estilo arXiv/OpenHands, porém simples | ✅ 4 páginas, 2 colunas |
-| Tese defendida (não só descrita) | ✅ Harness Tri-Camada, justificada contra as 5 |
-| Anotações de estudo / decisões / trade-offs | ✅ §1, §3.1, §3.3 |
-| Considera supercérebro + Apps + APIs | ✅ §2.2 e §3.2 (o que é tool/memória/app) |
-| Pontos críticos por tarefa do gestor | ✅ §6 (relatório, diagnóstico, pauta, criativos) |
+| Curto, estilo arXiv/OpenHands, porém simples | ✅ 6 páginas, 2 colunas |
+| Tese defendida (não só descrita) | ✅ Harness Tri-Camada; §2.3 mapeia as 5 famílias (Tabela 1) e §3.1 defende a composição |
+| Anotações de estudo / decisões / trade-offs | ✅ §1, §2.3, §3.1, §3.3 |
+| Considera supercérebro + Apps + APIs | ✅ §2.2 (por que grafo, por que tempo é camada, por que App ≠ tool, o que os canais mudam) + §3.2 |
+| Pontos críticos por tarefa do gestor | ✅ §6 é seção própria: 7 tarefas na Tabela 3 + os dois casos graves em prosa |
+| Achado próprio, medido | ✅ Quadro 1: entrada de 2,9k → 11,3k tokens contra ~434 de saída num turno de 5 passos |
 | As 11 perguntas do roteiro | ✅ mapa em `paper/GUIA-DO-PAPER.md` |
 | Figura + tabela + referências | ✅ Figura 1, Tabela 1, 6 refs |
 | Fontes de estudo registradas | ✅ OpenHands, ReAct, CodeAct, **RLM (2512.24601)**, Zep/Graphiti, Anthropic |
@@ -78,6 +79,17 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
   captura antes de descartar o chunk por falta de delta; sem isso o número sumiria sem erro nenhum.
   `build/test_uso.js` cobre isso e mais 19 asserções, sem rede e sem chave.
 - Docs: `paper/GUIA-DO-PAPER.pdf` e `CHECKLIST.pdf` (versões em PDF, mais fáceis de ler).
+
+## Pendente no paper (decisão do Rafa, 19/08)
+
+Três assuntos ficaram de fora por escolha e estão descritos em `paper/GUIA-DO-PAPER.md`.
+Cada um vale meia página no critério "aprofundamento no estudo":
+
+| Assunto | Por que renderia ponto |
+|---|---|
+| Gestão de contexto em sessão longa | é a consequência direta do Quadro 1; hoje o §7 só admite a lacuna |
+| Como saber se o harness funciona (traces de referência, regressão) | é o assunto que mais sinaliza vaga fundacional |
+| Falha de tool e paralelismo (erro, rate limit, dado parcial) | hoje o paper não fala de erro em lugar nenhum |
 
 ## Opcionais que ficam de fora (não bloqueiam a entrega)
 - Ouvir o **podcast AdzHub · Harness** e o **How I AI** e citar uma frase no §1 (reforça o critério

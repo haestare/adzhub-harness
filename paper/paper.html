@@ -49,6 +49,10 @@
   .refs ol { padding-left: 16px; margin: 3px 0; }
   .refs li { margin: 2px 0; }
   .footer-note { font-size: 8pt; color: #667; text-align: center; margin-top: 10px; border-top: 1px solid #dfe3e9; padding-top: 6px; }
+  .bloco-tabela { break-inside: avoid; page-break-inside: avoid; margin: 4px 0 8px; }
+  .quadro { border: 1px solid #b9c0cb; border-left: 3px solid #46536b; background: #f7f9fc; padding: 6px 9px; margin: 6px 0 8px; }
+  .quadro .lbl { font-variant: small-caps; font-weight: 700; letter-spacing: .3px; }
+  table.t1 td.num { text-align: right; font-family: "SFMono-Regular", Consolas, monospace; font-size: 8pt; }
   .kbd { font-family: monospace; font-size: 8.2pt; background:#f1f3f6; border:1px solid #d6dae1; border-radius:3px; padding:0 3px; }
 </style>
 </head>
@@ -63,7 +67,7 @@
 </div>
 
 <div class="span-all abstract">
-  <p><span class="lbl">Resumo.</span> O gestor de marketing da AdzHub não precisa de um chatbot que responde: precisa de um agente que resolve tarefas compostas (cruzar gasto de anúncio com venda real, diagnosticar um CPA que subiu, montar a pauta de uma call) navegando o histórico da conta. Defendo que o erro comum, tratar tudo como <i>tool</i>, subutiliza o domínio. Proponho um harness híbrido de três mecanismos, um por camada: a memória (supercérebro: grafo + linha do tempo) é <b>hidratada como ambiente</b> antes do loop, não consultada às cegas; as APIs (Meta, CRM) são <b>tools</b> num loop ReAct; e os Apps de metodologia são <b>skills</b> encapsuladas que o harness invoca sem reimplementar. Um protótipo web de chat ilustra a tese sobre um dataset mock da Housewhey, com o <i>trace</i> do harness visível (hidratação → tools → observações → resposta) e cinco problemas de gestão plantados e não rotulados. O que fica só no paper: a construção do grafo temporal real, permissões de escrita e avaliação automática. O recorte consciente: nenhuma ação que escreve na conta; o MVP lê, diagnostica e propõe.</p>
+  <p><span class="lbl">Resumo.</span> O gestor de marketing da AdzHub não precisa de um chatbot que responde: precisa de um agente que resolve tarefas compostas (cruzar gasto de anúncio com venda real, diagnosticar um CPA que subiu, montar a pauta de uma call) navegando o histórico da conta. Defendo que o erro comum, tratar tudo como <i>tool</i>, subutiliza o domínio. Proponho um harness híbrido de três mecanismos, um por camada: a memória (supercérebro: grafo + linha do tempo) é <b>hidratada como ambiente</b> antes do loop, não consultada às cegas; as APIs (Meta, CRM) são <b>tools</b> num loop ReAct; e os Apps de metodologia são <b>skills</b> encapsuladas que o harness invoca sem reimplementar. Um protótipo web de chat ilustra a tese sobre um dataset mock da Housewhey, com o <i>trace</i> do harness visível (hidratação → tools → observações → resposta) e cinco problemas de gestão plantados e não rotulados. Do protótipo sai também uma medição que muda decisão de projeto: num turno de cinco passos a entrada cresce de 2,9k para 11,3k tokens contra ~434 de saída, ou seja o custo de um harness ReAct é dominado pelo reenvio de observação, não pela geração. O que fica só no paper: a construção do grafo temporal real, permissões de escrita e avaliação automática. O recorte consciente: nenhuma ação que escreve na conta; o MVP lê, diagnostica e propõe.</p>
 </div>
 <div class="span-all keywords"><span class="lbl">Palavras-chave:</span> harness agêntico, ReAct híbrido, memória temporal, contexto como ambiente (RLM), skills, orquestração, marketing.</div>
 <hr class="span-all rule" />
@@ -74,7 +78,7 @@
 <p>O produto-alvo é um chat agêntico (no espírito do Cursor, mas para marketing): o gestor descreve uma tarefa e o agente orquestra contexto, Apps e APIs até uma ação útil. Antes de desenhar, separo dois conceitos que se confundem. O <b>modelo</b> é o LLM: prevê o próximo token e, no máximo, emite a intenção de chamar uma função. O <b>harness</b> é o runtime em volta: o loop que executa a chamada, injeta a observação de volta, guarda estado, impõe limites (allowlist de tools, teto de passos) e decide o que entra no contexto. Trocar de modelo troca o raciocínio; trocar de harness troca o que o agente consegue fazer com aquele raciocínio.</p>
 <p>Uma imagem fixa a distinção. O LLM é um cérebro num pote: sabe muito, mas não vê o mundo nem age. O harness é o exoesqueleto que pluga esse cérebro na operação. O exoesqueleto restringe o foco (em vez de deixar o cérebro divagar, prende ele nos passos daquela tarefa), provê os músculos e as ferramentas (tools, memória, dados da conta) e força a saída num comportamento estrito. E faz isso <i>sem tocar no cérebro</i>: não mexemos nos pesos do modelo (isso seria treino), apenas embrulhamos software em volta e filtramos o que o LLM vê. Mesmo cérebro, exoesqueletos diferentes, agentes diferentes.</p>
 <p>No início do estudo eu tratava harness como sinônimo de "loop de tool-calling": ligar o modelo a um punhado de funções e deixar rodar. Estudando os tipos de referência (ReAct [2], sandbox/CodeAct [3], sessão com permissões e skills, orquestração por grafo, contexto como ambiente [4]) e o SDK do OpenHands [1], o que mudou foi entender que a decisão de arquitetura não é "qual loop", e sim <b>como cada recurso do domínio entra no runtime</b>: o que vira tool, o que vira memória e o que vira unidade de trabalho encapsulada. Um bom harness é, antes de tudo, uma política de contexto.</p>
-<p><b>Tese.</b> Para este domínio, um harness que trata suas três camadas com o mesmo mecanismo (tudo tool) é caro e frágil; defendo um híbrido em que <i>memória é ambiente, API é tool e App é skill</i>. As seções §2 a §6 definem o vocabulário, justificam a escolha contra as alternativas, mostram o que o protótipo ilustra e onde a solução quebra.</p>
+<p><b>Tese.</b> Para este domínio, um harness que trata suas três camadas com o mesmo mecanismo (tudo tool) é caro e frágil; defendo um híbrido em que <i>memória é ambiente, API é tool e App é skill</i>. As seções §2 a §7 definem o vocabulário, justificam a escolha contra as alternativas, mostram o que o protótipo ilustra e onde a solução quebra.</p>
 
 <h2>2. Preliminares</h2>
 <h3>2.1. As peças do exoesqueleto</h3>
@@ -91,72 +95,38 @@
 <h3>2.2. O domínio AdzHub (como eu o leio)</h3>
 <p>A página do desafio expõe três camadas. <b>(i) Supercérebro:</b> a memória da operação, pessoas, cliente, campanhas e decisões ligadas em grafo (GraphRAG), com linha do tempo (contexto temporal). <b>(ii) Apps:</b> metodologias empacotadas (insight da semana, brief de criativo, diagnóstico, análise de criativos, mapa de solução). <b>(iii) APIs:</b> os dados da operação (Meta, Google, Analytics, CRM, WhatsApp). A observação central deste paper: essas três camadas têm <i>naturezas</i> diferentes, e o harness rende mais quando respeita essa diferença em vez de achatar tudo em "função que o LLM chama".</p>
 
+<p><b>Por que o supercérebro é um grafo, e não uma tabela.</b> O que o gestor precisa saber quase nunca está num registro só: está na <i>ligação</i> entre registros. "Por que o criativo de Creatina não subiu" se responde ligando criativo → tarefa de aprovação → pessoa que aprova → decisão registrada na call → restrição do mapa de solução. Numa tabela isso é um <i>join</i> que alguém precisa ter previsto; num grafo é caminhar de vizinho em vizinho, e é por isso que a recuperação pode partir de um nó qualquer citado na pergunta. As entidades que valem a pena existirem como nó são poucas e estáveis: cliente, campanha, criativo, pessoa, decisão, tarefa, restrição de marca. As arestas carregam o que a tabela perde: quem decidiu, para quem, a partir de qual conversa.</p>
+
+<p><b>Por que a linha do tempo é uma camada e não um campo de data.</b> Nenhuma afirmação de performance significa algo fora de uma linha de base: "o CPA subiu" só existe contra o CPA de antes. E, mais importante, fato de operação <i>vence</i>: "o cliente não quer falar em resultado garantido" era verdade em março e continua; "a verba é de R$ 5.000" pode ter mudado na semana passada. Uma memória que só acumula texto responde com o fato revogado e soa confiante. Por isso trato tempo como parte da memória (o que valia quando), no espírito do grafo temporal com invalidação [5], e não como uma coluna <code>created_at</code> que ninguém consulta.</p>
+
+<p><b>Por que um App não é só mais uma tool.</b> As duas são "função que o harness chama", e é aí que a distinção parece pedante. A diferença é o que cada uma carrega: a tool carrega <i>dado</i> (o gasto do anúncio é o que é), e o App carrega <i>opinião do negócio</i> (o que conta como criativo saturado, quando recomendar pausar, o que a marca não pode falar). Colocar metodologia no prompt tem três custos que a versão encapsulada não paga: ela é reprocessada pelo LLM a cada turno (token), pode ser reinterpretada de um jeito diferente a cada turno (consistência), e deixa de ser versionável pelo time que a escreveu (produto). Um App é a metodologia da AdzHub virando código chamável; se ela vira parágrafo de prompt, ela vira sugestão.</p>
+
+<p><b>O que os canais mudam.</b> WhatsApp e reuniões não são mais uma fonte de métrica, são onde mora o <i>porquê</i>: a aprovação que travou, o combinado da call, a reclamação que antecede o pedido de relatório. É a única camada que explica decisão humana, e é por isso que ela entra como memória e não como API de dado. Já Analytics ao lado de Meta e CRM cria um problema que o harness precisa assumir em vez de esconder: <b>três sistemas contam a mesma venda de três jeitos</b> (janelas de atribuição e modelos diferentes). O desenho aqui não elege um vencedor em silêncio; expõe a divergência, que é exatamente o quinto problema plantado no dataset (§4.2).</p>
+
+<h3>2.3. Cinco famílias de harness (o terreno estudado)</h3>
+<p>Antes de escolher, mapeei as famílias que aparecem na literatura e nos produtos. Resumo o que cada uma propõe de fato, não o rótulo, porque a diferença entre elas não é de estilo: é de <i>onde</i> o trabalho acontece.</p>
+<p><b>ReAct</b> [2] intercala raciocínio e ação no mesmo traço: o modelo escreve o que pensa, escolhe a ação, lê a observação e revisa o pensamento. O ganho não é a chamada de função em si (qualquer loop faz isso), é a observação poder <i>corrigir</i> o raciocínio no meio do caminho. <b>CodeAct</b> [3] muda o espaço de ação: em vez de JSON, o agente escreve código executável, o que dá laço, condicional e reaproveitamento de resultado anterior de graça, ao custo de um sandbox. O <b>SDK do OpenHands</b> [1] mostra o harness como produto de engenharia: fluxo de eventos como estado, runtime isolado, tools plugáveis e uma camada que inspeciona a ação antes de executar. <b>RLM</b> [4] muda a pergunta: em vez de empurrar tudo para dentro do prompt, trata o contexto como um ambiente que o modelo percorre. A nota da Anthropic [6] separa <i>workflow</i> (caminho predefinido em código) de <i>agente</i> (o modelo dirige o próprio processo) e recomenda a coisa mais simples que resolve, o que é um argumento direto contra orquestrar este chat por grafo de estados. E a memória por grafo temporal [5] fecha o mapa pelo lado do dado: fatos com validade, que mudam e são invalidados no tempo.</p>
+<p>A Tabela 1 põe as cinco lado a lado com o veredito que cada uma recebeu neste desenho. A coluna que decide não é "onde brilha", é <b>onde falha no chat do gestor</b>: é ela que explica por que a resposta não é escolher uma, e sim compor.</p>
+
+<div class="bloco-tabela span-all">
+<p class="small" style="margin:0 0 3px"><b>Tabela 1.</b> As cinco famílias estudadas e o veredito de cada uma para o chat agêntico de marketing.</p>
+<table class="t1" style="width:100%">
+  <tr><th>Família</th><th>Onde o trabalho acontece</th><th>Brilha quando</th><th>Onde falha no chat do gestor</th><th>Veredito aqui</th></tr>
+  <tr><td>ReAct [2]</td><td>loop pensa → age → observa</td><td>a tarefa é aberta e exige investigar</td><td>sozinho, memória vira "mais uma tool" e o modelo precisa lembrar de buscar contexto</td><td><b>adotado como núcleo</b></td></tr>
+  <tr><td>CodeAct / sandbox [3]</td><td>código executado em ambiente isolado</td><td>cálculo encadeado, engenharia, transformação de dado</td><td>soma execução e latência para um trabalho que é cruzar tabela e aplicar método</td><td>fora do MVP; volta como tool de verificação (§7)</td></tr>
+  <tr><td>Sessão com permissões e skills [1]</td><td>unidade de trabalho encapsulada + porteiro antes da ação</td><td>metodologia repetível e ação que escreve</td><td>permissão resolve um risco que o MVP não corre, porque ele é só-leitura</td><td><b>metade</b>: skills sim, permissões adiadas</td></tr>
+  <tr><td>Orquestração por grafo de estados</td><td>caminho desenhado antes de rodar</td><td>o fluxo é conhecido e se repete igual</td><td>é uma tarefa diferente por mensagem; caminho fixo engessa e falha no caso novo [6]</td><td>fora (o grafo aqui é de dados, não de controle)</td></tr>
+  <tr><td>Contexto como ambiente (RLM) [4]</td><td>recuperação antes do loop</td><td>todo pedido pressupõe histórico da conta</td><td>sozinho não age: não chama API nem executa metodologia</td><td><b>adotado</b> para a camada de memória</td></tr>
+</table>
+</div>
+
 <h2>3. Arquitetura</h2>
 <h3>3.1. A escolha: um híbrido de três mecanismos</h3>
-<p>Escolho um híbrido próprio com núcleo ReAct, e justifico contra cada referência, não só descrevo a minha:</p>
-<ul>
-  <li><b>ReAct puro</b> (loop tool-calling): é o esqueleto certo para tarefas abertas de diagnóstico, mas, sozinho, transforma memória em "mais uma tool", e o LLM precisa adivinhar quando buscar contexto. Num domínio onde quase toda pergunta pressupõe o histórico da conta, isso gera respostas sem chão ou passos desperdiçados. Mantenho o loop, mas tiro a memória de dentro dele por padrão.</li>
-  <li><b>Sandbox / CodeAct</b> (o agente escreve e executa código [3]): poderoso para engenharia, mas aqui o trabalho não é rodar código arbitrário, é cruzar fontes tabulares e aplicar metodologia. O sandbox soma superfície de risco (execução) e latência sem resolver o problema do gestor. Fica fora do MVP; volta, no máximo, como uma tool isolada de cálculo (§6).</li>
-  <li><b>Sessão com permissões e skills:</b> a parte de <i>skills</i> eu adoto (os Apps são exatamente isso). A parte de <i>permissões</i> eu adio de propósito, porque o MVP é só-leitura (§3.3). Uso metade dessa referência, conscientemente.</li>
-  <li><b>Orquestração por grafo</b> (estados): ótima quando o fluxo é conhecido e repetível (um pipeline fixo). O chat do gestor é o oposto: aberto, uma tarefa diferente por mensagem. Um grafo de controle rígido engessaria. Nota: o supercérebro é um grafo de <i>dados</i>, não de <i>controle</i>. Uso o grafo como memória, não como máquina de estados.</li>
-  <li><b>Contexto como ambiente (RLM [4]):</b> é a peça que cura a fraqueza do ReAct puro. Trato o supercérebro como ambiente: o harness recupera um pacote de contexto (nós relevantes do grafo + eventos recentes da timeline) e o injeta no prompt antes do loop. O modelo já começa situado.</li>
-</ul>
-<p>O híbrido, então: <b>RLM para a memória, ReAct para as APIs, skills para os Apps.</b> Nenhuma referência sozinha cobre as três naturezas; a tese está na composição.</p>
-
-<figure class="span-all">
-<svg viewBox="0 0 900 320" width="100%" style="max-width:180mm;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">
-  <defs>
-    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#444"/></marker>
-    <marker id="arD" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#8a93a5"/></marker>
-  </defs>
-  <!-- gestor -->
-  <rect x="8" y="120" width="96" height="54" rx="8" fill="#f3f5f8" stroke="#b9c0cb"/>
-  <text x="56" y="143" text-anchor="middle" font-size="12" fill="#14171c">Gestor de</text>
-  <text x="56" y="158" text-anchor="middle" font-size="12" fill="#14171c">marketing</text>
-  <line x1="104" y1="147" x2="130" y2="147" stroke="#444" stroke-width="1.4" marker-end="url(#ar)"/>
-  <!-- chat -->
-  <rect x="132" y="120" width="118" height="54" rx="8" fill="#eef2fb" stroke="#8fa6d8"/>
-  <text x="191" y="143" text-anchor="middle" font-size="12" fill="#14171c">Chat agêntico</text>
-  <text x="191" y="158" text-anchor="middle" font-size="10.5" fill="#4b5568">(estilo Cursor)</text>
-  <line x1="250" y1="147" x2="284" y2="147" stroke="#444" stroke-width="1.4" marker-end="url(#ar)"/>
-  <!-- harness -->
-  <rect x="286" y="40" width="250" height="214" rx="12" fill="#f7f8fa" stroke="#3a4152" stroke-width="1.6"/>
-  <text x="411" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#1b2130" letter-spacing="1">HARNESS · runtime</text>
-  <rect x="300" y="74" width="222" height="34" rx="7" fill="#efeaf9" stroke="#7b5cd6"/>
-  <text x="312" y="95" font-size="11.5" fill="#3a2b63"><tspan font-weight="bold">1 · hidrata contexto</tspan> → ambiente</text>
-  <rect x="300" y="114" width="222" height="34" rx="7" fill="#e9f0fa" stroke="#2b6cb0"/>
-  <text x="312" y="135" font-size="11.5" fill="#1f3f66"><tspan font-weight="bold">2 · loop ReAct</tspan> → chama tools</text>
-  <rect x="300" y="154" width="222" height="34" rx="7" fill="#e6f3ec" stroke="#1f8a5b"/>
-  <text x="312" y="175" font-size="11.5" fill="#0f4b30"><tspan font-weight="bold">3 · invoca skills</tspan> → Apps</text>
-  <rect x="300" y="196" width="222" height="30" rx="7" fill="#20263400" stroke="#c2c8d2" stroke-dasharray="3 3"/>
-  <text x="411" y="215" text-anchor="middle" font-size="9.6" fill="#556">guard-rails: allowlist · max_steps · só-leitura</text>
-  <!-- layers -->
-  <rect x="586" y="44" width="228" height="56" rx="9" fill="#efeaf9" stroke="#7b5cd6" stroke-width="1.4"/>
-  <text x="600" y="66" font-size="11.5" font-weight="bold" fill="#3a2b63">Supercérebro</text>
-  <text x="600" y="82" font-size="10" fill="#4b4470">grafo + linha do tempo</text>
-  <text x="802" y="94" text-anchor="end" font-size="9" font-weight="bold" fill="#7b5cd6">MEMÓRIA · AMBIENTE</text>
-  <rect x="586" y="118" width="228" height="56" rx="9" fill="#e9f0fa" stroke="#2b6cb0" stroke-width="1.4"/>
-  <text x="600" y="140" font-size="11.5" font-weight="bold" fill="#1f3f66">APIs Meta / CRM</text>
-  <text x="600" y="156" font-size="10" fill="#3d5674">gasto, série, venda real</text>
-  <text x="802" y="168" text-anchor="end" font-size="9" font-weight="bold" fill="#2b6cb0">TOOLS</text>
-  <rect x="586" y="192" width="228" height="56" rx="9" fill="#e6f3ec" stroke="#1f8a5b" stroke-width="1.4"/>
-  <text x="600" y="214" font-size="11.5" font-weight="bold" fill="#0f4b30">Apps de metodologia</text>
-  <text x="600" y="230" font-size="10" fill="#2f6b4c">análise de criativo, mapa</text>
-  <text x="802" y="242" text-anchor="end" font-size="9" font-weight="bold" fill="#1f8a5b">SKILLS</text>
-  <!-- harness <-> layers -->
-  <line x1="536" y1="91" x2="584" y2="72" stroke="#444" stroke-width="1.2" marker-end="url(#ar)"/>
-  <line x1="536" y1="131" x2="584" y2="146" stroke="#444" stroke-width="1.2" marker-end="url(#ar)"/>
-  <line x1="536" y1="171" x2="584" y2="220" stroke="#444" stroke-width="1.2" marker-end="url(#ar)"/>
-  <line x1="584" y1="86" x2="536" y2="105" stroke="#8a93a5" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arD)"/>
-  <text x="560" y="30" text-anchor="middle" font-size="9" fill="#8a93a5">observações ⟳</text>
-  <!-- ação -->
-  <rect x="286" y="272" width="528" height="34" rx="9" fill="#f3f5f8" stroke="#b9c0cb"/>
-  <text x="550" y="293" text-anchor="middle" font-size="11" fill="#14171c">→ ação útil: <tspan font-weight="bold">ler · diagnosticar · propor</tspan>  (nunca escrever sem o humano)</text>
-  <line x1="411" y1="254" x2="411" y2="271" stroke="#444" stroke-width="1.4" marker-end="url(#ar)"/>
-</svg>
-
-  <figcaption><b>Figura 1.</b> O harness Tri-Camada. O gestor fala com o chat; o harness (1) hidrata a <span style="color:#7b5cd6"><b>memória</b></span> do supercérebro como ambiente antes do loop, (2) roda o loop ReAct chamando as <span style="color:#2b6cb0"><b>APIs</b></span> como tools e (3) invoca os <span style="color:#1f8a5b"><b>Apps</b></span> como skills de metodologia; guard-rails (allowlist, max_steps, só-leitura) cercam o loop. O que é <i>tool</i>: dado cru da operação. O que é <i>memória</i>: contexto temporal, injetado. O que é <i>app</i>: metodologia encapsulada, invocada.</figcaption>
-</figure>
+<p>A Tabela 1 já traz o veredito de cada família. O que explico aqui é a <i>composição</i>, porque é nela que está a tese: a decisão não é "qual das cinco", é <b>qual mecanismo para qual camada</b>. Nenhuma delas cobre as três sozinha.</p>
+<p><b>Núcleo ReAct, porque a tarefa é aberta.</b> O gestor não manda um comando por vez, ele descreve um problema ("o CPA subiu, o que houve"), e o caminho até a resposta só se descobre andando: o número do Meta é que faz querer abrir o CRM. Isso é exatamente o que o loop pensa-age-observa entrega, e é o motivo de eu não usar um grafo de controle: caminho desenhado antes só funciona quando o fluxo se repete, e aqui cada mensagem é uma tarefa diferente [6].</p>
+<p><b>Memória fora do loop, porque toda pergunta pressupõe histórico.</b> Esta é a correção que o ReAct puro precisa neste domínio. Se o supercérebro for só mais uma tool, o modelo tem que <i>lembrar</i> de consultá-lo, e erra dos dois lados: às vezes responde no vácuo, às vezes gasta dois passos buscando o que já devia estar na mão. Trato a memória como ambiente [4]: antes do loop, o harness recupera um pacote (nós relevantes do grafo + eventos recentes da timeline) e injeta no prompt. O agente já começa situado, e a memória continua disponível como tool para o aprofundamento sob demanda.</p>
+<p><b>Apps como skills, porque metodologia é produto e não prompt.</b> A parte de <i>skills</i> da referência de sessão eu adoto inteira: o App é chamado, devolve ranking e recomendação, e o harness usa a saída sem recriar o método. A parte de <i>permissões</i> eu adio de propósito, porque o MVP não escreve na conta (§3.3). Uso metade da referência, conscientemente, e digo qual metade.</p>
+<p>O híbrido, então: <b>RLM para a memória, ReAct para as APIs, skills para os Apps.</b> A tese não está em nenhuma das três escolhas isoladas, está na composição, e o que a justifica é a Tabela 1: cada família falha justamente na camada que outra cobre.</p>
 
 <h3>3.2. O que é tool, o que é memória, o que é app</h3>
 <p><b>Memória (supercérebro), hidratada como ambiente.</b> Antes do loop, o harness chama uma recuperação (<code>search_client_context</code> + <code>get_timeline</code>) semeada pela intenção e injeta um pacote compacto no <i>system prompt</i>. Durante o loop, o modelo ainda pode aprofundar (buscar uma ata com <code>search_conversations</code>). Memória é ambiente por padrão, tool sob demanda.</p>
@@ -183,13 +153,26 @@
   <li><b>Resposta:</b> causa raiz + próximo passo: pausar o depoimento resolve CPA, fadiga e verba de uma vez.</li>
 </ul>
 
-<p><b>Observabilidade inclui custo.</b> Um turno de agente não é uma chamada de LLM, são N: uma por passo do loop, e cada passo reenvia a conversa inteira mais as observações das tools. O protótipo mostra o consumo por chamada, por turno e por sessão. No turno de diagnóstico acima, a entrada das cinco chamadas sobe <b>2,9k → 3,8k → 10,4k → 10,7k → 11,3k</b> tokens, contra ~434 de saída no turno inteiro: o custo de um harness ReAct é dominado pelo <i>reenvio</i> de observação, não pela geração. (Esses números são a estimativa do modo simulado, que reconstrói o loop passo a passo; no modo LLM o mesmo painel mostra o <code>usage</code> medido pela API, e estimativa e medição nunca aparecem sem rótulo.) É o número que decide se uma tool deve devolver o JSON cru ou um resumo, e ele fica visível para quem opera, não só para quem desenvolve.</p>
+<p><b>Observabilidade inclui custo, e o custo tem um formato surpreendente.</b> Um turno de agente não é uma chamada de LLM, são N: uma por passo do loop, e <i>cada passo reenvia a conversa inteira mais todas as observações já colhidas</i>. Isso é estrutural em qualquer harness ReAct, e é invisível para quem só olha o preço por token. O protótipo mostra o consumo por chamada, por turno e por sessão, e o Quadro 1 traz o turno de diagnóstico acima medido passo a passo.</p>
+
+<div class="quadro span-all">
+  <p style="margin-bottom:4px"><span class="lbl">Quadro 1.</span> Custo real de um turno de 5 passos (diagnóstico do Ômega 3). A entrada cresce quase 4x ao longo do turno; a saída do turno inteiro cabe em ~434 tokens.</p>
+  <table class="t1" style="margin:2px 0 4px">
+    <tr><th>Passo</th><th>O que o modelo decidiu ali</th><th>Entrada (tokens)</th><th>Por que cresceu</th></tr>
+    <tr><td>1</td><td>chamar <code>list_ads</code></td><td class="num">2.900</td><td>prompt + memória hidratada</td></tr>
+    <tr><td>2</td><td>chamar <code>get_leads</code></td><td class="num">3.800</td><td>+ observação do passo 1</td></tr>
+    <tr><td>3</td><td>chamar <code>get_ad_insights</code></td><td class="num">10.400</td><td>+ leads (a observação mais pesada)</td></tr>
+    <tr><td>4</td><td>chamar <code>run_app_analise_criativos</code></td><td class="num">10.700</td><td>+ série semanal</td></tr>
+    <tr><td>5</td><td>escrever a resposta</td><td class="num">11.300</td><td>+ recomendação do App</td></tr>
+  </table>
+  <p class="small" style="margin:0"><b>A leitura:</b> o custo de um harness ReAct é dominado pelo <i>reenvio</i> de observação, não pela geração. Uma tool que devolve JSON cru não custa uma vez, custa uma vez por passo restante do turno. É esse número, e não o gosto do desenvolvedor, que decide se <code>get_leads</code> devolve a lista inteira ou um sumário. (Valores da estimativa do modo simulado, que reconstrói o loop passo a passo; no modo LLM o mesmo painel mostra o <code>usage</code> medido pela API, e medido nunca aparece sem rótulo ao lado de estimado.)</p>
+</div>
 
 <h3>4.2. Datasets: o que é fake, o que dá para testar</h3>
-<p>Sete arquivos JSON (um cliente, cruzados: <code>ad_id = utm_content</code>, pessoas no grafo, timeline e WhatsApp). Cada arquivo é uma tool (Tabela 1). Tudo é fake, mas coerente ponta a ponta; <b>cinco problemas de gestão estão plantados e não rotulados</b>: CPA estourado, criativo saturado, origem declarada que mente contra o UTM, aprovação travada por <i>claim</i> proibido, e spend vs budget. O avaliador cola três prompts (relatório, diagnóstico, origem dos leads) e vê o harness orquestrar duas ou mais tools e chegar à conclusão sem que ela esteja escrita no dado.</p>
+<p>Sete arquivos JSON (um cliente, cruzados: <code>ad_id = utm_content</code>, pessoas no grafo, timeline e WhatsApp). Cada arquivo é uma tool (Tabela 2). Tudo é fake, mas coerente ponta a ponta; <b>cinco problemas de gestão estão plantados e não rotulados</b>: CPA estourado, criativo saturado, origem declarada que mente contra o UTM, aprovação travada por <i>claim</i> proibido, e spend vs budget. O avaliador cola três prompts (relatório, diagnóstico, origem dos leads) e vê o harness orquestrar duas ou mais tools e chegar à conclusão sem que ela esteja escrita no dado.</p>
 
 <table class="t1 span-all">
-  <caption class="small" style="text-align:left;margin-bottom:3px"><b>Tabela 1.</b> Peças do harness: o que é cada uma e onde vive.</caption>
+  <caption class="small" style="text-align:left;margin-bottom:3px"><b>Tabela 2.</b> Peças do harness: o que é cada uma e onde vive.</caption>
   <tr><th>Peça (tool)</th><th>Camada</th><th>Papel na tese</th><th>Estado no protótipo</th></tr>
   <tr><td class="mono">search_client_context</td><td>Supercérebro · grafo</td><td>Memória (ambiente): quem/o quê da conta</td><td>simulado sobre mock; visível no trace</td></tr>
   <tr><td class="mono">get_timeline</td><td>Supercérebro · temporal</td><td>Memória (ambiente): histórico recente</td><td>simulado sobre mock; visível no trace</td></tr>
@@ -206,15 +189,27 @@
 <h2>5. Notas de execução</h2>
 <p>PDF anexo (este). Demo opcional: chat web estático, roda de <code>file://</code> por duplo clique ou de qualquer host, sem backend. LLM via OpenRouter, chave só na sessão do browser. Dados mock gerados de forma determinística a partir do <code>dataset_prompt</code>. Consumo de tokens medido pelo <code>usage</code> da própria API no modo LLM e estimado (sempre marcado com ≈) no simulado, onde não há LLM para medir. A resposta é streamada (SSE), com duas notas de engenharia que só aparecem ao streamar um loop <i>com tools</i>: os <code>tool_calls</code> chegam <b>fatiados</b> (nome e argumentos em pedaços indexados) e precisam ser remontados no transporte, senão o nome da tool chega quebrado; e o texto escrito <i>antes</i> de uma tool é raciocínio, não resposta, então migra para o trace em vez de ficar colado na resposta final. Comandos de sessão (<code>/tools</code>, <code>/uso</code>) rodam localmente, fora do harness. O que é fake: todas as métricas e nomes. O que "parece real": o cruzamento e o trace, porque as tools leem o mesmo dado que a resposta cita, e o avaliador pode abrir cada passo.</p>
 
-<h2>6. Limitações</h2>
-<p><b>Onde a solução quebra, por tarefa do gestor:</b></p>
-<ul>
-  <li><b>Relatório:</b> o join depende de <code>utm_content</code> limpo. No real, UTM faltando ou errado, múltiplos toques (last-click vs multi-touch) e janelas de atribuição divergentes entre Meta e CRM quebram o "custo por venda" exato. O mock tem UTM limpo; a conta real, não.</li>
-  <li><b>Diagnóstico:</b> a hidratação rasa (sem embeddings) pode não trazer o nó certo se a pergunta usa um sinônimo que não casa por substring. E o agente <i>correlaciona</i>, não prova causa: "o depoimento saturou" é leitura plausível, não teste estatístico.</li>
-  <li><b>Pauta:</b> depende de timeline e conversas populadas e datadas; com memória esparsa, a pauta fica genérica. O harness não sabe o que não foi registrado.</li>
-  <li><b>Criativos:</b> o App recomenda pausar/variar, mas o <i>brief</i> novo é gerado pelo LLM; sem o mapa de solução no contexto, ele pode propor copy que a marca não pode falar. Mitigo injetando <code>get_mapa_solucao</code>, mas não garanto.</li>
-</ul>
-<p>Além disso: só-leitura por escolha (não fecho o loop de execução); um cliente só (sem multi-tenant nem auth); memória mock, o grafo temporal de verdade (resolução de entidade, invalidação, decaimento) é o trabalho pesado que fica de fora.</p>
+<h2>6. Pontos críticos por tarefa do gestor</h2>
+<p>Uma arquitetura só se avalia contra o trabalho real. Percorro as tarefas do dia a dia do gestor da AdzHub (as que os Apps cobrem, mais as duas que atravessam tudo, relatório e call) e digo, em cada uma, onde <i>este</i> desenho ajuda e onde ele quebra. A Tabela 3 é o resumo; os dois casos mais graves ganham parágrafo depois.</p>
+
+<table class="t1 span-all">
+  <caption class="small" style="text-align:left;margin-bottom:3px"><b>Tabela 3.</b> Onde o Harness Tri-Camada ajuda e onde ele quebra, por tarefa do gestor.</caption>
+  <tr><th>Tarefa</th><th>O que o harness faz</th><th>Ponto crítico</th><th>O que no desenho mitiga (e o que não)</th></tr>
+  <tr><td><b>Insight da semana</b> (relatório)</td><td>cruza gasto do Meta com venda do CRM por <code>utm_content</code> e ordena por custo por venda</td><td>o cruzamento vale o que vale o UTM; atribuição divergente entre Meta e CRM muda o ranking</td><td>expõe a divergência em vez de escolher um lado; <b>não</b> reconcilia janelas de atribuição</td></tr>
+  <tr><td><b>Diagnóstico</b> (o CPA subiu)</td><td>hidrata a campanha, puxa série e frequência, chama o App de criativos</td><td>o agente correlaciona, não prova causa; hidratação rasa pode não trazer o nó certo</td><td>separa fato de hipótese na resposta; <b>não</b> faz teste estatístico</td></tr>
+  <tr><td><b>Análise de criativos</b></td><td>invoca o App e usa ranking + recomendação (seguir/pausar/variar)</td><td>o App julga pelo número, sem ver a peça: criativo bom com oferta errada é indistinguível</td><td>metodologia versionada fora do prompt; <b>não</b> analisa imagem nem vídeo</td></tr>
+  <tr><td><b>Brief de criativo</b></td><td>gera o brief a partir do que venceu, com o mapa de solução no contexto</td><td>é a única tarefa <i>geradora</i>: o LLM pode propor copy que a marca não pode falar</td><td>injeta <code>get_mapa_solucao</code>; <b>não</b> garante, porque restrição no prompt é instrução, não trava</td></tr>
+  <tr><td><b>Mapa de solução</b> (restrições)</td><td>lê a ficha da marca como skill e a usa como limite do que sugerir</td><td>a ficha é um retrato: cliente muda de posicionamento e ninguém reescreve o documento</td><td>tempo é camada de memória (fato vence); <b>não</b> detecta sozinho que a ficha envelheceu</td></tr>
+  <tr><td><b>Pauta de call</b></td><td>lê timeline e conversas, monta o que mudou e o que ficou pendente</td><td>o harness não sabe o que não foi registrado: memória esparsa vira pauta genérica</td><td>puxa o canal (WhatsApp) junto; <b>não</b> inventa o que ninguém anotou</td></tr>
+  <tr><td><b>Responder o cliente</b></td><td>recupera o histórico do canal e propõe a resposta</td><td>é onde uma ação errada custa relacionamento, não só verba</td><td>só-leitura por desenho: o agente redige, o humano envia; <b>não</b> automatiza o envio</td></tr>
+</table>
+
+<p><b>O crítico do relatório é atribuição, não join.</b> No mock, <code>utm_content = ad_id</code> sempre bate, e é isso que faz a demo parecer limpa. Na conta real, UTM falta, vem errado, e o mesmo lead toca três anúncios antes de comprar; Meta credita por visualização dentro da janela dele, o CRM credita o último clique, e os dois estão "certos" pelas próprias regras. Um agente que escolhe uma fonte e segue em frente produz um número que ninguém consegue auditar. Por isso o quinto problema plantado no dataset é exatamente esse (leads que declaram Google mas carregam UTM do Meta), e por isso a persona é instruída a <i>expor</i> a discrepância. Resolver de verdade é um projeto de atribuição, não um prompt.</p>
+
+<p><b>O crítico do diagnóstico é confundir correlação com causa.</b> "O criativo saturou" é a leitura mais provável quando frequência sobe e hook rate cai, mas continua sendo leitura: pode ser sazonalidade, concorrente novo no leilão, ou mudança na página de destino que o agente nem enxerga. O desenho responde a isso separando na saída o que é fato medido, o que é hipótese e o que é recomendação, o que devolve ao gestor a decisão de confiar. O que ele não faz é medir a confiança dessa hipótese, e isso não é detalhe: um agente que fala com a mesma segurança nos dois casos treina o gestor a parar de conferir.</p>
+
+<h2>7. Limitações e próximos passos</h2>
+<p>Além dos pontos críticos por tarefa: só-leitura por escolha (não fecho o loop de execução); um cliente só (sem multi-tenant nem auth); memória mock, sendo que o grafo temporal de verdade (resolução de entidade, invalidação, decaimento) é o trabalho pesado que fica de fora. O protótipo também não trata sessão longa: hoje o turno é curto, e o Quadro 1 mostra por que isso não escala sozinho, mas a política de compactação de contexto ao longo de uma conversa de quarenta mensagens não está desenhada.</p>
 <p><b>Com mais uma semana</b> eu construiria: (a) recuperação de memória de verdade, um grafo temporal com embeddings e decaimento (no espírito de Graphiti/Zep [5]), para a hidratação parar de depender de match por substring; (b) uma tool isolada de verificação numérica, o único lugar onde um mini-sandbox se paga, para o join Meta×CRM ficar auditável; (c) confirmação de escrita (pausar anúncio) com o humano no meio. <b>O que eu deliberadamente não construiria:</b> um grafo de controle por cima do chat (mata a abertura da tarefa), execução de código arbitrário no MVP (risco sem retorno) e memória de longo prazo que aprende sozinha sem revisão, porque num domínio com o dinheiro do cliente, contexto errado propaga erro.</p>
 
 <div class="refs">

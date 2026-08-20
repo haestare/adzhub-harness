@@ -57,7 +57,7 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Tabelas estilo Ads Manager + títulos h1-h3 | ✅ `build/test_md.js` trava a regressão |
 | Tema claro/escuro persistente | ✅ |
 | Comandos de barra (10, com paleta) | ✅ `/tools` e `/uso` deixam o harness inspecionável |
-| Dropdown de modelos ranqueado (#1 = mais forte), lista viva da API | ✅ fallback local sem rede |
+| Dropdown de modelos | ✅ lista viva da API em 3 grupos: recomendados ranqueados (#1 = mais forte, um por família), grátis (custo zero) e o catálogo inteiro com tool-calling, mais "Outro (digitar id)". Fallback local sem rede, que não anuncia nada como grátis. `build/test_modelos.js` trava a regressão |
 | Deploy automático a cada commit | ✅ `.githooks/post-commit` + hook `Stop` (espelham e empurram o repo de deploy) |
 | Publicação no host | ⚠️ o Railway **enfileira**: um build slot por vez, então uma rajada de commits deixa a demo alguns commits atrás enquanto a fila drena. Diagnóstico é a aba **Deployments**, e a linha embaixo do deployment diz o motivo: `Waiting for build slot` é fila normal, `Deployment queued due to upstream GitHub issues` é a integração do Railway travada (problema do host, não nosso), `Failed` é problema nosso. **Redeploy durante a fila piora**; o que acelera é cancelar os enfileirados intermediários. Todo commit no repo vira um build, mesmo fora de `web/`, então commitar em lote é operacional. Caminho alternativo pronto: `.github/workflows/pages.yml`, faltando só ligar em **Settings → Pages → Source: GitHub Actions** (clique humano, a Action não liga sozinha). |
 | Como saber, em 5s, qual versão está no ar | ✅ chip `build=<data>` no painel do harness, e `GET /js/modelos.js` (404 = host num commit antigo) |

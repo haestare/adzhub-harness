@@ -126,6 +126,12 @@ node build/test_sim.js
 # testar a contabilidade de tokens (streaming SSE, loop ReAct, estimativa)
 node build/test_uso.js
 
+# testar o renderizador de markdown (títulos, listas numeradas, tabelas)
+node build/test_md.js
+
+# testar o catálogo de modelos (filtro de tool-calling, ranking, grupos) - fetch falso
+node build/test_modelos.js
+
 # rebuildar o PDF do paper (usa Chromium headless)
 chromium --headless=new --no-pdf-header-footer \
   --print-to-pdf=paper/paper.pdf "file://$PWD/paper/paper.html"

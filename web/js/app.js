@@ -448,17 +448,43 @@
     // dropdown de modelos: ranqueado, #1 = mais forte. Pinta com o fallback na
     // hora e repinta quando a API da OpenRouter responde (lista sempre atual).
     const sel = $("#modelSelect");
+    const OUTRO = "__outro__";
     const pintarModelos = () => {
       sel.innerHTML = "";
-      const lista = AZ.modelos.lista.slice();
-      if (!lista.some((m) => m.id === S.model)) lista.unshift({ id: S.model, nota: "escolhido por você", saida: 0 });
-      lista.forEach((m, i) => { const o = el("option"); o.value = m.id; o.textContent = AZ.modelos.rotulo(m, i); sel.append(o); });
+      const grupos = AZ.modelos.grupos();
+      // o modelo em uso tem que existir no select, senão o dropdown mostraria
+      // outro valor e o harness rodaria com um terceiro (o select não casa nada)
+      const conhecido = grupos.some((g) => g.itens.some((m) => m.id === S.model));
+      if (!conhecido) {
+        const og = el("optgroup"); og.label = "Escolhido por você";
+        const o = el("option"); o.value = S.model; o.textContent = S.model; og.append(o); sel.append(og);
+      }
+      grupos.forEach((g) => {
+        if (!g.itens.length) return;
+        const og = el("optgroup"); og.label = g.titulo;
+        g.itens.forEach((m, i) => {
+          const o = el("option"); o.value = m.id;
+          o.textContent = g.ranqueado ? AZ.modelos.rotulo(m, i) : AZ.modelos.rotuloSimples(m);
+          og.append(o);
+        });
+        sel.append(og);
+      });
+      // catálogo grande ainda envelhece: modelo lançado hoje não está em lista nenhuma
+      const outro = el("option"); outro.value = OUTRO; outro.textContent = "Outro (digitar id)…"; sel.append(outro);
       sel.value = S.model;
       const dica = $("#modelHint");
       if (dica) dica.textContent = AZ.modelos.origem === "api"
-        ? "Lista viva da OpenRouter, só modelos com tool-calling, ranqueada do mais forte (#1) para o mais fraco."
+        ? `Lista viva da OpenRouter: ${AZ.modelos.todos.length} modelos com tool-calling. Os recomendados vêm ranqueados do mais forte (#1) para o mais fraco.`
         : "Lista local (a API da OpenRouter não respondeu agora). Ranqueada do mais forte (#1) para o mais fraco.";
     };
+    // digitar um id à mão; cancelar volta para o que estava selecionado antes
+    sel.addEventListener("change", () => {
+      if (sel.value !== OUTRO) return;
+      const id = (window.prompt("id do modelo na OpenRouter (ex.: anthropic/claude-opus-4.6)") || "").trim();
+      if (!id) { sel.value = S.model; return; }
+      ctxComandos().setModelo(id);   // mesma função que o comando /modelo usa
+      pintarModelos();
+    });
     pintarModelos();
     AZ.modelos.carregar().then(pintarModelos);
 
@@ -482,7 +508,11 @@
     $("#cfgSave").onclick = () => {
       S.mode = document.querySelector('input[name="mode"]:checked').value;
       S.key = $("#keyInput").value.trim();
-      S.model = $("#modelSelect").value || "openai/gpt-4o-mini";
+      // guarda: "Outro (digitar id)" nunca pode virar o id do modelo. O handler de
+      // change já devolve o select ao valor anterior, mas salvar o sentinela seria
+      // um 400 na primeira chamada, com o dropdown mostrando algo plausível.
+      const escolhido = $("#modelSelect").value;
+      S.model = (!escolhido || escolhido === "__outro__") ? S.model || "openai/gpt-4o-mini" : escolhido;
       sessionStorage.setItem("az_mode", S.mode);
       sessionStorage.setItem("az_key", S.key);
       sessionStorage.setItem("az_model", S.model);

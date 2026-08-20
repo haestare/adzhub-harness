@@ -29,7 +29,7 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Trocar de modelo | ✅ dropdown clicável |
 | Simula tools/APIs/Supercérebro com dataset | ✅ 7 mocks cruzados (Housewhey) |
 | Deploy público (Railway recomendado) | ✅ https://adzhub-harness-production.up.railway.app |
-| UI/UX | ✅ tema claro/escuro, tabelas estilo Ads Manager, resposta digitada ao vivo, animações, trace agrupado (Nx) |
+| UI/UX | ✅ layout de três colunas seguindo o design de referência da AdzHub (tarefas · conversa · o harness por dentro), tema claro/escuro em par, balão azul do gestor à direita, tabelas estilo Ads Manager, resposta digitada ao vivo, trace agrupado (Nx) |
 | Persona própria (não é chatbot genérico) | ✅ **NEXO**, estrategista de performance, em `web/js/nexo.js` (fora do runtime) |
 | Consumo de tokens visível pro gestor | ✅ por chamada (trace), por turno (rodapé com tabela) e por sessão (medidor no topo), com custo em US$ quando o provedor devolve |
 | Bônus: roda sem key (modo simulado) | ✅ avaliador testa sem colar chave |

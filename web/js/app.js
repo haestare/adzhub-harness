@@ -154,7 +154,9 @@
       const u = step.uso, est = u.estimado;
       const n = el("div", "step uso"); const head = el("div", "head");
       head.append(
-        el("span", "idx", "⛽"),
+        // ⚠️ emoji aqui depende de fonte de emoji instalada e vira caixinha onde
+        // não há; badge de texto usa a mesma fonte do resto e nunca quebra
+        el("span", "badge custo", "custo"),
         el("span", "name", (typeof step.passo === "number" ? "chamada " + step.passo : String(step.passo)) + " de LLM"),
         el("span", "lbl", (est ? "≈ " : "") + "↑" + AZ.tokens.fmt(u.entrada) + " ↓" + AZ.tokens.fmt(u.saida))
       );
@@ -380,6 +382,7 @@
 
   // ---- contexto que os comandos recebem (o que eles podem mexer) ----------
   let ultima = "";            // última pergunta de verdade (para /refazer)
+  let ddModelos = null;       // listbox de modelos (js/dropdown.js)
   let temaAtual = "dark";     // espelha o tema; init() define de fato
   function ctxComandos() {
     return {
@@ -391,7 +394,7 @@
         greeting();
       },
       setModo(m) { S.mode = m; sessionStorage.setItem("az_mode", m); refreshCfgUI(); },
-      setModelo(m) { S.model = m; sessionStorage.setItem("az_model", m); const s = $("#modelSelect"); if (s && !Array.from(s.options).some((o) => o.value === m)) { const o = el("option"); o.value = m; o.textContent = m; s.append(o); } if (s) s.value = m; refreshCfgUI(); },
+      setModelo(m) { S.model = m; sessionStorage.setItem("az_model", m); if (ddModelos) ddModelos.atualizar(); refreshCfgUI(); },
       trocarTema(alvo) { temaAtual = alvo || (temaAtual === "light" ? "dark" : "light"); aplicarTema(temaAtual); return temaAtual; },
       repintarMedidor: () => pintarMedidor(null),
     };
@@ -401,7 +404,7 @@
     document.documentElement.dataset.theme = t;
     localStorage.setItem("az_theme", t);
     const btn = $("#themeBtn");
-    btn.textContent = t === "light" ? "🌙" : "☀️";
+    btn.textContent = t === "light" ? "☾" : "☀";
     btn.title = t === "light" ? "Mudar para tema escuro" : "Mudar para tema claro";
   }
 
@@ -416,7 +419,7 @@
   }
   function openModal() {
     $("#keyInput").value = S.key;
-    $("#modelSelect").value = S.model;
+    if (ddModelos) ddModelos.atualizar();
     document.querySelectorAll('input[name="mode"]').forEach((r) => { r.checked = r.value === S.mode; });
     markMode();
     const ks = $("#keyStatus");
@@ -435,58 +438,77 @@
     aplicarTema(localStorage.getItem("az_theme") || "dark");
     $("#themeBtn").onclick = () => aplicarTema(temaAtual === "light" ? "dark" : "light");
 
-    const examples = [
-      ["📊 Relatório de criativos", "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato."],
-      ["🔎 Diagnóstico da conta", "O CPA do Ômega 3 subiu. Investigue a causa e me diga o próximo passo."],
-      ["🧭 Origem dos leads", "Vários leads dizem que vieram do Google, mas quase não rodamos Google. O que está acontecendo?"],
-      ["🗒️ Pauta da call", "Monte a pauta da próxima call com a Housewhey."],
+    // ---- tarefas do gestor: viram a lista da lateral E os chips do composer --
+    // São as mesmas quatro do dataset (uma por problema plantado), então clicar
+    // na lateral é o caminho curto para o avaliador ver o harness trabalhando.
+    const TAREFAS = [
+      { nome: "Relatório de criativos", sub: "Meta × CRM por utm_content", av: "av-1", quando: "09:42",
+        prompt: "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato." },
+      { nome: "Diagnóstico da conta", sub: "o CPA do Ômega 3 subiu", av: "av-2", quando: "09:15",
+        prompt: "O CPA do Ômega 3 subiu. Investigue a causa e me diga o próximo passo." },
+      { nome: "Origem dos leads", sub: "o que o lead diz × o que o UTM diz", av: "av-3", quando: "08:51",
+        prompt: "Vários leads dizem que vieram do Google, mas quase não rodamos Google. O que está acontecendo?" },
+      { nome: "Pauta da call", sub: "o que mudou e o que ficou pendente", av: "av-4", quando: "08:20",
+        prompt: "Monte a pauta da próxima call com a Housewhey." },
     ];
-    const chips = $("#chips");
-    examples.forEach(([label, prompt]) => {
-      const c = el("div", "chip", label); c.onclick = () => { if (!S.running) send(prompt); }; chips.append(c);
-    });
-    // dropdown de modelos: ranqueado, #1 = mais forte. Pinta com o fallback na
-    // hora e repinta quando a API da OpenRouter responde (lista sempre atual).
-    const sel = $("#modelSelect");
-    const OUTRO = "__outro__";
-    const pintarModelos = () => {
-      sel.innerHTML = "";
-      const grupos = AZ.modelos.grupos();
-      // o modelo em uso tem que existir no select, senão o dropdown mostraria
-      // outro valor e o harness rodaria com um terceiro (o select não casa nada)
-      const conhecido = grupos.some((g) => g.itens.some((m) => m.id === S.model));
-      if (!conhecido) {
-        const og = el("optgroup"); og.label = "Escolhido por você";
-        const o = el("option"); o.value = S.model; o.textContent = S.model; og.append(o); sel.append(og);
-      }
-      grupos.forEach((g) => {
-        if (!g.itens.length) return;
-        const og = el("optgroup"); og.label = g.titulo;
-        g.itens.forEach((m, i) => {
-          const o = el("option"); o.value = m.id;
-          o.textContent = g.ranqueado ? AZ.modelos.rotulo(m, i) : AZ.modelos.rotuloSimples(m);
-          og.append(o);
-        });
-        sel.append(og);
+    const convs = $("#convs");
+    const pintarTarefas = (filtro) => {
+      const f = (filtro || "").toLowerCase().trim();
+      convs.innerHTML = "";
+      const vistas = TAREFAS.filter((t) => !f || (t.nome + " " + t.sub).toLowerCase().includes(f));
+      if (!vistas.length) { convs.append(el("div", "empty", "Nenhuma tarefa com esse nome.")); return; }
+      vistas.forEach((t) => {
+        const linha = el("div", "conv");
+        linha.innerHTML = `<span class="av ${t.av}">${t.nome.slice(0, 1)}</span>`
+          + `<span class="txt"><b>${t.nome}</b><small>${t.sub}</small></span>`
+          + `<span class="quando">${t.quando}</span>`;
+        linha.onclick = () => {
+          if (S.running) return;
+          document.querySelectorAll(".conv").forEach((c) => c.classList.remove("on"));
+          linha.classList.add("on");
+          send(t.prompt);
+        };
+        convs.append(linha);
       });
-      // catálogo grande ainda envelhece: modelo lançado hoje não está em lista nenhuma
-      const outro = el("option"); outro.value = OUTRO; outro.textContent = "Outro (digitar id)…"; sel.append(outro);
-      sel.value = S.model;
+    };
+    pintarTarefas("");
+    $("#filtroTarefa").addEventListener("input", (e) => pintarTarefas(e.target.value));
+
+    const chips = $("#chips");
+    TAREFAS.forEach((t) => {
+      const c = el("div", "chip", t.nome);
+      c.onclick = () => { if (!S.running) send(t.prompt); };
+      chips.append(c);
+    });
+
+    // ---- listbox de modelos --------------------------------------------------
+    // Não é um <select> porque o nativo abre sempre rolado até o item escolhido,
+    // e com centenas de modelos isso jogava os recomendados para fora da tela.
+    const atualizarDica = () => {
       const dica = $("#modelHint");
-      if (dica) dica.textContent = AZ.modelos.origem === "api"
-        ? `Lista viva da OpenRouter: ${AZ.modelos.todos.length} modelos com tool-calling. Os recomendados vêm ranqueados do mais forte (#1) para o mais fraco.`
+      if (!dica) return;
+      dica.textContent = AZ.modelos.origem === "api"
+        ? `Lista viva da OpenRouter: ${AZ.modelos.todos.length} modelos com tool-calling. Abre sempre nos recomendados, ranqueados do mais forte (#1) para o mais fraco.`
         : "Lista local (a API da OpenRouter não respondeu agora). Ranqueada do mais forte (#1) para o mais fraco.";
     };
-    // digitar um id à mão; cancelar volta para o que estava selecionado antes
-    sel.addEventListener("change", () => {
-      if (sel.value !== OUTRO) return;
-      const id = (window.prompt("id do modelo na OpenRouter (ex.: anthropic/claude-opus-4.6)") || "").trim();
-      if (!id) { sel.value = S.model; return; }
-      ctxComandos().setModelo(id);   // mesma função que o comando /modelo usa
-      pintarModelos();
+    ddModelos = AZ.Dropdown.criar({
+      host: $("#modelDD"),
+      grupos: () => AZ.modelos.grupos(),
+      rotulo: (m, i, g) => (g.ranqueado ? AZ.modelos.rotulo(m, i) : AZ.modelos.rotuloSimples(m)),
+      valor: () => S.model,
+      onEscolher: (id) => ctxComandos().setModelo(id),
+      extra: {
+        // o catálogo também envelhece: modelo lançado hoje não está em lista nenhuma
+        texto: "Outro (digitar id)…",
+        aoClicar: () => {
+          const id = (window.prompt("id do modelo na OpenRouter (ex.: anthropic/claude-opus-4.6)") || "").trim();
+          if (id) ctxComandos().setModelo(id);
+        },
+      },
     });
-    pintarModelos();
-    AZ.modelos.carregar().then(pintarModelos);
+    ddModelos.atualizar();
+    atualizarDica();
+    AZ.modelos.carregar().then(() => { ddModelos.atualizar(); atualizarDica(); });
 
     const input = $("#input");
     const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
@@ -501,6 +523,13 @@
       if (e.key === "Enter" && !e.shiftKey && !e.defaultPrevented) { e.preventDefault(); const v = input.value; input.value = ""; grow(); send(v); }
     });
     $("#sendBtn").onclick = () => { const v = input.value; input.value = ""; grow(); send(v); };
+    // o "+" do composer é a porta visível dos comandos: digitar "/" é atalho de
+    // quem já sabe, e ninguém descobre atalho que não está escrito em lugar nenhum
+    $("#cmdBtn").onclick = () => {
+      input.focus();
+      if (!input.value.startsWith("/")) input.value = "/" + input.value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
 
     $("#cfgBtn").onclick = openModal;
     $("#cfgCancel").onclick = () => $("#modal").classList.remove("on");
@@ -508,11 +537,9 @@
     $("#cfgSave").onclick = () => {
       S.mode = document.querySelector('input[name="mode"]:checked').value;
       S.key = $("#keyInput").value.trim();
-      // guarda: "Outro (digitar id)" nunca pode virar o id do modelo. O handler de
-      // change já devolve o select ao valor anterior, mas salvar o sentinela seria
-      // um 400 na primeira chamada, com o dropdown mostrando algo plausível.
-      const escolhido = $("#modelSelect").value;
-      S.model = (!escolhido || escolhido === "__outro__") ? S.model || "openai/gpt-4o-mini" : escolhido;
+      // o modelo já foi gravado em S no clique da listbox; aqui só garantimos que
+      // ele nunca fica vazio (um id vazio viraria 400 na primeira chamada)
+      S.model = S.model || "openai/gpt-4o-mini";
       sessionStorage.setItem("az_mode", S.mode);
       sessionStorage.setItem("az_key", S.key);
       sessionStorage.setItem("az_model", S.model);

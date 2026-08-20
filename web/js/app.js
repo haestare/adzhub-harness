@@ -527,7 +527,20 @@
       CHATS.forEach((c) => { c.elMsgs.classList.toggle("on", c === chat); c.elSteps.classList.toggle("on", c === chat); });
       messages = chat.elMsgs; liveTrace = chat.elSteps;
       $("#statusTxt").textContent = chat.nome + " · Housewhey";
-      if (!chat.elMsgs.childElementCount) greeting();   // conversa nova nasce com a abertura do NEXO
+      // ⚠️ A abertura longa do NEXO só cabe UMA vez. Repetir aquele texto inteiro em
+      // toda conversa nova é ruído, e pior: uma bolha aparecendo sozinha ao abrir o
+      // fio se parece com "ele enviou minha mensagem", que é justamente o que não
+      // acontece aqui. As outras conversas ganham uma linha curta, que diz o estado.
+      if (!chat.elMsgs.childElementCount) {
+        if (CHATS.indexOf(chat) === 0) greeting();
+        else addMsg("bot", (body) => {
+          const b = el("div", "bubble");
+          b.innerHTML = renderMarkdown(chat.prompt
+            ? `Conversa nova sobre **${chat.nome}**. Deixei a pergunta pronta no campo abaixo: mande como está, ou edite antes.`
+            : "Conversa nova. Manda a tarefa e eu puxo o dado antes de opinar.");
+          body.append(b);
+        });
+      }
       // ⚠️ abrir uma tarefa NÃO manda a pergunta sozinha: deixa ela pronta no campo.
       // Disparar no clique é o comportamento que ele recusou (mensagem aparecendo
       // sem ele ter pedido), e além disso tira dele a chance de editar o pedido.

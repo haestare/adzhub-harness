@@ -198,7 +198,12 @@
   }
 
   // ---- resposta digitada ao vivo (typewriter, ambos os modos) -------------
-  const messages = $("#messages");
+  // 🔴 CADA CONVERSA TEM O PRÓPRIO DOM, e estas duas variáveis apontam para a
+  // conversa ATIVA. Guardar histórico como innerHTML e restaurar depois pareceu
+  // mais simples e é armadilha: innerHTML recria os nós e leva junto todo
+  // ouvinte de clique, então os passos do trace parariam de abrir, sem erro.
+  let messages = null;   // .messages da conversa ativa
+  let liveTrace = null;  // .steps da conversa ativa
   function revealAnswer(bubble, md, onDone) {
     if (reduced()) { bubble.innerHTML = renderMarkdown(md); onDone && onDone(); return; }
     const tokens = md.match(/\s+|\S+/g) || [];
@@ -285,7 +290,6 @@
   }
 
   // ---- envio --------------------------------------------------------------
-  const liveTrace = $("#liveTrace");
   async function send(text) {
     if (!text.trim() || S.running) return;
     // comando de barra é ação LOCAL de sessão: não entra no harness, não gasta token
@@ -298,7 +302,16 @@
     }
     S.running = true; $("#sendBtn").disabled = true;
     ultima = text;
-    addMsg("user", (body) => { const b = el("div", "bubble"); b.textContent = text; body.append(b); });
+    const anexados = AZ.Anexos.lista.slice();
+    addMsg("user", (body) => {
+      const b = el("div", "bubble"); b.textContent = text; body.append(b);
+      anexados.forEach((a) => {
+        const chip = el("div", "anexo-msg");
+        chip.textContent = "anexo: " + a.nome + (a.cortado ? " (cortado pelo harness)" : "");
+        b.append(chip);
+      });
+    });
+    if (AZ._chat) AZ._chat.registrar(text);   // a linha da lateral passa a mostrar o que foi perguntado
     liveTrace.innerHTML = "";
     const steps = [];
     let toolIdx = 0, last = null; // last: grupo de tool consecutivo aberto
@@ -342,7 +355,13 @@
     resetLive = () => { streamed = ""; liveBubble.innerHTML = DOTS; };
 
     let out;
-    try { out = await AZ.Harness.run({ message: text, mode: S.mode, apiKey: S.key, model: S.model, emit, onDelta }); }
+    const anexos = AZ.Anexos.paraContexto();
+    // ⚠️ O motor simulado é um planner roteirizado: ele não lê arquivo, e fingir
+    // que leu seria a única mentira desta demo. Diz na cara, na hora.
+    if (anexos && S.mode !== "llm") {
+      avisoDoSistema("Recebi o arquivo, mas o motor simulado é roteirizado e não lê anexo: ele executa as tools sobre o mock. Para o agente realmente ler o que você anexou, troque para o modo LLM em ⚙ Configurar.");
+    }
+    try { out = await AZ.Harness.run({ message: text, mode: S.mode, apiKey: S.key, model: S.model, emit, onDelta, anexos }); }
     catch (e) { out = { answer: null, error: String(e && e.message || e) }; }
 
     const cameFromStream = !!streamed && !!out && out.answer === streamed;
@@ -366,6 +385,9 @@
       }
       messages.scrollTop = messages.scrollHeight;
       S.running = false; $("#sendBtn").disabled = false;
+      // ⚠️ o anexo vale para UM turno. Sem isto ele seria reenviado a cada
+      // mensagem seguinte, e o custo de entrada (Quadro 1) cresceria calado.
+      AZ.Anexos.limpar(); pintarAnexos();
     };
 
     if (out && out.answer && cameFromStream) {
@@ -388,7 +410,7 @@
     return {
       S, messages, send, openModal, renderMarkdown,
       ultimaPergunta: () => ultima,
-      limparConversa() {
+      limparConversa() {                       // /limpar age só na conversa aberta
         messages.innerHTML = "";
         liveTrace.innerHTML = '<div class="empty">Envie uma mensagem para ver o harness orquestrar as tools.</div>';
         greeting();
@@ -432,52 +454,129 @@
     document.querySelectorAll("#modeRow label").forEach((l) => l.classList.toggle("sel", l.dataset.mode === v));
   }
 
+  // aviso do próprio app (não é o agente falando): erro de anexo, microfone, etc.
+  function avisoDoSistema(txt) {
+    addMsg("bot", (body) => {
+      const b = el("div", "bubble aviso");
+      b.textContent = txt;
+      body.append(b);
+    });
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function pintarAnexos() {
+    const host = $("#anexos"); if (!host) return;
+    host.innerHTML = "";
+    AZ.Anexos.lista.forEach((a) => {
+      const kb = Math.max(1, Math.round(a.bytes / 1024));
+      const chip = el("span", "anexo");
+      chip.innerHTML = '<span class="a-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11.5 11.7 19.8a4.5 4.5 0 0 1-6.4-6.4l8.3-8.3a3 3 0 0 1 4.2 4.2l-8.3 8.3a1.5 1.5 0 0 1-2.1-2.1l7.4-7.4"/></svg></span>';
+      const nome = el("span", "a-nome"); nome.textContent = a.nome + " · " + kb + " KB" + (a.cortado ? " · cortado" : "");
+      const x = el("button", "a-x", "✕"); x.title = "Remover"; x.onclick = () => { AZ.Anexos.remover(a.nome); pintarAnexos(); };
+      chip.append(nome, x); host.append(chip);
+    });
+  }
+
   // ---- init ---------------------------------------------------------------
   function init() {
     // tema claro/escuro (persistente em localStorage; o <head> já setou antes do paint)
     aplicarTema(localStorage.getItem("az_theme") || "dark");
     $("#themeBtn").onclick = () => aplicarTema(temaAtual === "light" ? "dark" : "light");
 
-    // ---- tarefas do gestor: viram a lista da lateral E os chips do composer --
-    // São as mesmas quatro do dataset (uma por problema plantado), então clicar
-    // na lateral é o caminho curto para o avaliador ver o harness trabalhando.
+    // ---- conversas ------------------------------------------------------------
+    // 🔴 CADA TAREFA É UMA CONVERSA SEPARADA, não um botão que injeta mensagem na
+    // conversa aberta. É o que o gestor faz de verdade: o diagnóstico do CPA e a
+    // pauta da call são assuntos diferentes, com históricos diferentes, e misturar
+    // os dois no mesmo fio faz o agente reenviar contexto que não é daquela tarefa
+    // (que, pelo Quadro 1 do paper, é justamente o que custa caro num loop ReAct).
+    const input = $("#input");
+    const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
+    input.addEventListener("input", grow);
+
     const TAREFAS = [
-      { nome: "Relatório de criativos", sub: "Meta × CRM por utm_content", av: "av-1", quando: "09:42",
+      { nome: "Relatório de criativos", sub: "Meta × CRM por utm_content", av: "av-1",
         prompt: "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato." },
-      { nome: "Diagnóstico da conta", sub: "o CPA do Ômega 3 subiu", av: "av-2", quando: "09:15",
+      { nome: "Diagnóstico da conta", sub: "o CPA do Ômega 3 subiu", av: "av-2",
         prompt: "O CPA do Ômega 3 subiu. Investigue a causa e me diga o próximo passo." },
-      { nome: "Origem dos leads", sub: "o que o lead diz × o que o UTM diz", av: "av-3", quando: "08:51",
+      { nome: "Origem dos leads", sub: "o que o lead diz × o que o UTM diz", av: "av-3",
         prompt: "Vários leads dizem que vieram do Google, mas quase não rodamos Google. O que está acontecendo?" },
-      { nome: "Pauta da call", sub: "o que mudou e o que ficou pendente", av: "av-4", quando: "08:20",
+      { nome: "Pauta da call", sub: "o que mudou e o que ficou pendente", av: "av-4",
         prompt: "Monte a pauta da próxima call com a Housewhey." },
     ];
-    const convs = $("#convs");
-    const pintarTarefas = (filtro) => {
+
+    const msgHost = $("#msgHost"), traceHost = $("#traceHost"), convs = $("#convs");
+    const CHATS = [];
+    let ativo = null;
+    const agora = () => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+    function criarChat(t) {
+      const chat = {
+        id: "c" + (CHATS.length + 1), nome: t.nome, sub: t.sub, av: t.av || "av-1",
+        prompt: t.prompt || "", quando: agora(), preview: t.sub, usado: false,
+        elMsgs: el("div", "messages"), elSteps: el("div", "steps"),
+      };
+      chat.elSteps.innerHTML = '<div class="empty">Envie uma mensagem para ver o harness orquestrar as tools.</div>';
+      msgHost.append(chat.elMsgs); traceHost.append(chat.elSteps);
+      CHATS.push(chat);
+      return chat;
+    }
+
+    function abrirChat(chat) {
+      if (S.running) return;                      // trocar de fio no meio de um turno perderia o trace
+      ativo = chat;
+      CHATS.forEach((c) => { c.elMsgs.classList.toggle("on", c === chat); c.elSteps.classList.toggle("on", c === chat); });
+      messages = chat.elMsgs; liveTrace = chat.elSteps;
+      $("#statusTxt").textContent = chat.nome + " · Housewhey";
+      if (!chat.elMsgs.childElementCount) greeting();   // conversa nova nasce com a abertura do NEXO
+      // ⚠️ abrir uma tarefa NÃO manda a pergunta sozinha: deixa ela pronta no campo.
+      // Disparar no clique é o comportamento que ele recusou (mensagem aparecendo
+      // sem ele ter pedido), e além disso tira dele a chance de editar o pedido.
+      if (!chat.usado && chat.prompt) { input.value = chat.prompt; grow(); }
+      else if (!chat.usado) { input.value = ""; grow(); }
+      input.focus();
+      pintarConversas($("#filtroTarefa").value);
+    }
+
+    function pintarConversas(filtro) {
       const f = (filtro || "").toLowerCase().trim();
       convs.innerHTML = "";
-      const vistas = TAREFAS.filter((t) => !f || (t.nome + " " + t.sub).toLowerCase().includes(f));
-      if (!vistas.length) { convs.append(el("div", "empty", "Nenhuma tarefa com esse nome.")); return; }
-      vistas.forEach((t) => {
-        const linha = el("div", "conv");
-        linha.innerHTML = `<span class="av ${t.av}">${t.nome.slice(0, 1)}</span>`
-          + `<span class="txt"><b>${t.nome}</b><small>${t.sub}</small></span>`
-          + `<span class="quando">${t.quando}</span>`;
-        linha.onclick = () => {
-          if (S.running) return;
-          document.querySelectorAll(".conv").forEach((c) => c.classList.remove("on"));
-          linha.classList.add("on");
-          send(t.prompt);
-        };
+      const vistas = CHATS.filter((c) => !f || (c.nome + " " + c.preview).toLowerCase().includes(f));
+      if (!vistas.length) { convs.append(el("div", "empty", "Nenhuma conversa com esse nome.")); return; }
+      vistas.forEach((c) => {
+        const linha = el("div", "conv" + (c === ativo ? " on" : ""));
+        linha.innerHTML = `<span class="av ${c.av}">${c.nome.slice(0, 1)}</span>`
+          + `<span class="txt"><b></b><small></small></span><span class="quando"></span>`;
+        // textContent e não innerHTML: o preview vem do que o gestor digitou
+        linha.querySelector("b").textContent = c.nome;
+        linha.querySelector("small").textContent = c.preview;
+        linha.querySelector(".quando").textContent = c.quando;
+        linha.onclick = () => abrirChat(c);
         convs.append(linha);
       });
-    };
-    pintarTarefas("");
-    $("#filtroTarefa").addEventListener("input", (e) => pintarTarefas(e.target.value));
+    }
 
+    // exposto para o send() marcar a conversa como usada e atualizar o preview
+    AZ._chat = {
+      registrar(texto) {
+        if (!ativo) return;
+        ativo.usado = true; ativo.preview = texto; ativo.quando = agora();
+        pintarConversas($("#filtroTarefa").value);
+      },
+    };
+
+    TAREFAS.forEach(criarChat);
+    abrirChat(CHATS[0]);
+    $("#filtroTarefa").addEventListener("input", (e) => pintarConversas(e.target.value));
+    $("#novoChat").onclick = () => {
+      const n = criarChat({ nome: "Nova conversa", sub: "sem mensagens ainda", av: "av-" + (1 + CHATS.length % 4) });
+      abrirChat(n);
+    };
+
+    // os chips continuam existindo, mas agora ABREM a conversa daquela tarefa
     const chips = $("#chips");
-    TAREFAS.forEach((t) => {
+    TAREFAS.forEach((t, i) => {
       const c = el("div", "chip", t.nome);
-      c.onclick = () => { if (!S.running) send(t.prompt); };
+      c.onclick = () => abrirChat(CHATS[i]);
       chips.append(c);
     });
 
@@ -510,9 +609,6 @@
     atualizarDica();
     AZ.modelos.carregar().then(() => { ddModelos.atualizar(); atualizarDica(); });
 
-    const input = $("#input");
-    const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
-    input.addEventListener("input", grow);
     // paleta de comandos: instalada ANTES do keydown de enviar, porque quando ela
     // está aberta o Enter escolhe o comando em vez de mandar a mensagem.
     AZ.Comandos.instalarPaleta({
@@ -525,10 +621,33 @@
     $("#sendBtn").onclick = () => { const v = input.value; input.value = ""; grow(); send(v); };
     // o "+" do composer é a porta visível dos comandos: digitar "/" é atalho de
     // quem já sabe, e ninguém descobre atalho que não está escrito em lugar nenhum
-    $("#cmdBtn").onclick = () => {
-      input.focus();
-      if (!input.value.startsWith("/")) input.value = "/" + input.value;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
+    // ---- anexo de arquivo ----------------------------------------------------
+    $("#anexoBtn").onclick = () => $("#anexoInput").click();
+    $("#anexoInput").addEventListener("change", async (e) => {
+      for (const f of Array.from(e.target.files || [])) {
+        const r = await AZ.Anexos.adicionar(f);
+        if (r.erro) avisoDoSistema(r.erro);
+        else if (r.cortado) avisoDoSistema(`"${f.name}" é grande: mandei os primeiros 40 mil caracteres. Num loop ReAct cada passo reenvia o que já entrou, então arquivo inteiro custa uma vez por passo, não uma vez.`);
+      }
+      e.target.value = "";      // permite reanexar o mesmo arquivo depois de remover
+      pintarAnexos();
+    });
+
+    // ---- ditado --------------------------------------------------------------
+    const mic = $("#micBtn");
+    if (!AZ.Voz.suportado) mic.title = AZ.Voz.motivo;
+    mic.onclick = () => {
+      AZ.Voz.alternar({
+        aoTexto: (t, final) => {
+          input.value = t; grow();
+          if (final) input.focus();
+        },
+        aoEstado: (ligado) => {
+          mic.classList.toggle("gravando", ligado);
+          mic.title = ligado ? "Ouvindo… clique para parar" : "Ditar a mensagem";
+        },
+        aoErro: (m) => avisoDoSistema(m),
+      });
     };
 
     $("#cfgBtn").onclick = openModal;
@@ -553,8 +672,7 @@
     $("#meterBtn").onclick = (e) => { e.stopPropagation(); $("#meter").classList.toggle("on"); };
     document.addEventListener("click", (e) => { if (!e.target.closest("#meter")) $("#meter").classList.remove("on"); });
 
-    refreshCfgUI();
-    greeting();
+    refreshCfgUI();   // a abertura do NEXO já foi escrita ao abrir a 1ª conversa
   }
   init();
 })();

@@ -141,12 +141,16 @@
 
   // ---- orquestrador ---------------------------------------------------------
   AZ.Harness = {
-    async run({ message, mode, apiKey, model, emit, onDelta }) {
+    async run({ message, mode, apiKey, model, emit, onDelta, anexos }) {
       emit = emit || (() => {});
       const medidor = AZ.tokens.medidor();
       const pack = hydrate(message, emit); // memória sempre hidratada (ambiente)
       if (mode === "llm") {
-        return await llmLoop({ message, apiKey, model, pack, emit, onDelta, medidor });
+        // ⚠️ o anexo entra DEPOIS da pergunta e como bloco marcado, nunca colado
+        // no texto do gestor: o modelo precisa saber o que ele mesmo pediu e o que
+        // é dado que veio junto, senão trata o CSV inteiro como instrução.
+        const comAnexo = anexos ? message + "\n\n" + anexos : message;
+        return await llmLoop({ message: comAnexo, apiKey, model, pack, emit, onDelta, medidor });
       }
       // modo simulado: planner roteirizado executando as tools reais
       const chamadas = [];

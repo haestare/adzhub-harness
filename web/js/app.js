@@ -521,7 +521,7 @@
       return chat;
     }
 
-    function abrirChat(chat) {
+    function abrirChat(chat, disparar) {
       if (S.running) return;                      // trocar de fio no meio de um turno perderia o trace
       ativo = chat;
       CHATS.forEach((c) => { c.elMsgs.classList.toggle("on", c === chat); c.elSteps.classList.toggle("on", c === chat); });
@@ -531,23 +531,21 @@
       // toda conversa nova é ruído, e pior: uma bolha aparecendo sozinha ao abrir o
       // fio se parece com "ele enviou minha mensagem", que é justamente o que não
       // acontece aqui. As outras conversas ganham uma linha curta, que diz o estado.
-      if (!chat.elMsgs.childElementCount) {
-        if (CHATS.indexOf(chat) === 0) greeting();
-        else addMsg("bot", (body) => {
-          const b = el("div", "bubble");
-          b.innerHTML = renderMarkdown(chat.prompt
-            ? `Conversa nova sobre **${chat.nome}**. Deixei a pergunta pronta no campo abaixo: mande como está, ou edite antes.`
-            : "Conversa nova. Manda a tarefa e eu puxo o dado antes de opinar.");
-          body.append(b);
-        });
-      }
-      // ⚠️ abrir uma tarefa NÃO manda a pergunta sozinha: deixa ela pronta no campo.
-      // Disparar no clique é o comportamento que ele recusou (mensagem aparecendo
-      // sem ele ter pedido), e além disso tira dele a chance de editar o pedido.
-      if (!chat.usado && chat.prompt) { input.value = chat.prompt; grow(); }
-      else if (!chat.usado) { input.value = ""; grow(); }
+      // ⚠️ A abertura longa do NEXO só cabe UMA vez, e só onde ela não atrapalha:
+      // numa conversa que já vai disparar a pergunta, ela viraria ruído na frente
+      // da resposta. Fica na primeira (que é a porta de entrada) e na conversa
+      // vazia criada à mão, que é onde alguém precisa saber o que pedir.
+      if (!chat.elMsgs.childElementCount && (CHATS.indexOf(chat) === 0 || !chat.prompt)) greeting();
+      input.value = ""; grow();
       input.focus();
       pintarConversas($("#filtroTarefa").value);
+      // Conversa pré-definida DISPARA a pergunta na primeira abertura: ela existe
+      // para o avaliador ver o harness trabalhar em um clique.
+      // ⚠️ Só na PRIMEIRA vez (`usado`): sem essa guarda, voltar para um fio já
+      // respondido refaria a mesma pergunta e duplicaria o histórico dele.
+      // ⚠️ `disparar` é falso na carga da página: abrir a demo não pode fazer
+      // uma pergunta sozinho. Só o clique na lateral (ou no chip) dispara.
+      if (disparar && !chat.usado && chat.prompt) { chat.usado = true; send(chat.prompt); }
     }
 
     function pintarConversas(filtro) {
@@ -563,7 +561,7 @@
         linha.querySelector("b").textContent = c.nome;
         linha.querySelector("small").textContent = c.preview;
         linha.querySelector(".quando").textContent = c.quando;
-        linha.onclick = () => abrirChat(c);
+          linha.onclick = () => abrirChat(c, true);
         convs.append(linha);
       });
     }
@@ -578,18 +576,18 @@
     };
 
     TAREFAS.forEach(criarChat);
-    abrirChat(CHATS[0]);
+    abrirChat(CHATS[0], false);   // abre a demo sem perguntar nada
     $("#filtroTarefa").addEventListener("input", (e) => pintarConversas(e.target.value));
     $("#novoChat").onclick = () => {
       const n = criarChat({ nome: "Nova conversa", sub: "sem mensagens ainda", av: "av-" + (1 + CHATS.length % 4) });
-      abrirChat(n);
+      abrirChat(n, false);
     };
 
     // os chips continuam existindo, mas agora ABREM a conversa daquela tarefa
     const chips = $("#chips");
     TAREFAS.forEach((t, i) => {
       const c = el("div", "chip", t.nome);
-      c.onclick = () => abrirChat(CHATS[i]);
+      c.onclick = () => abrirChat(CHATS[i], true);
       chips.append(c);
     });
 
@@ -635,7 +633,48 @@
     // o "+" do composer é a porta visível dos comandos: digitar "/" é atalho de
     // quem já sabe, e ninguém descobre atalho que não está escrito em lugar nenhum
     // ---- anexo de arquivo ----------------------------------------------------
-    $("#anexoBtn").onclick = () => $("#anexoInput").click();
+    // Clique simples abre um menu de tipo (filtra o explorador e já diz o que o
+    // harness sabe ler); duplo clique pula o menu e abre o explorador direto.
+    // ⚠️ Os dois gestos brigam: o 1º clique do duplo também é um clique. Por isso
+    // o menu espera ~230ms antes de aparecer, e o dblclick cancela essa espera.
+    const anexoBtn = $("#anexoBtn"), anexoInput = $("#anexoInput"), menuAnexo = $("#menuAnexo");
+    const TIPOS = [
+      { rot: "Planilha ou CSV", ext: ".csv,.tsv", nota: "csv, tsv" },
+      { rot: "Texto ou Markdown", ext: ".txt,.md", nota: "txt, md" },
+      { rot: "JSON", ext: ".json", nota: "json" },
+      { rot: "Qualquer um dos aceitos", ext: ".csv,.tsv,.txt,.md,.json", nota: "" },
+    ];
+    let esperaMenu = null;
+    const abrirSeletor = (accept) => { anexoInput.accept = accept; anexoInput.click(); };
+    const fecharMenu = () => menuAnexo.classList.remove("on");
+
+    menuAnexo.innerHTML = "";
+    TIPOS.forEach((t) => {
+      const it = el("div", "menu-item");
+      it.innerHTML = `<span>${t.rot}</span>` + (t.nota ? `<span class="menu-ext">${t.nota}</span>` : "");
+      it.onclick = () => { fecharMenu(); abrirSeletor(t.ext); };
+      menuAnexo.append(it);
+    });
+    // ⚠️ item que EXPLICA em vez de sumir: imagem e PDF são o que todo mundo tenta
+    // anexar primeiro, e um menu sem eles parece menu quebrado.
+    const naoDa = el("div", "menu-item off");
+    naoDa.innerHTML = '<span>Imagem ou PDF</span><span class="menu-ext">precisa de OCR ou modelo com visão</span>';
+    naoDa.title = "Esta demo lê texto. Um PDF ou print exigiria OCR ou um modelo multimodal, que está fora do recorte.";
+    menuAnexo.append(naoDa);
+
+    anexoBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (menuAnexo.classList.contains("on")) { fecharMenu(); return; }
+      clearTimeout(esperaMenu);
+      esperaMenu = setTimeout(() => menuAnexo.classList.add("on"), 230);
+    };
+    anexoBtn.ondblclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      clearTimeout(esperaMenu); fecharMenu();
+      abrirSeletor(".csv,.tsv,.txt,.md,.json");
+    };
+    document.addEventListener("click", fecharMenu);
+    menuAnexo.addEventListener("click", (e) => e.stopPropagation());
     $("#anexoInput").addEventListener("change", async (e) => {
       for (const f of Array.from(e.target.files || [])) {
         const r = await AZ.Anexos.adicionar(f);
@@ -651,10 +690,8 @@
     if (!AZ.Voz.suportado) mic.title = AZ.Voz.motivo;
     mic.onclick = () => {
       AZ.Voz.alternar({
-        aoTexto: (t, final) => {
-          input.value = t; grow();
-          if (final) input.focus();
-        },
+        textoAtual: input.value,        // o ditado ENTRA no que já está escrito
+        aoTexto: (t) => { input.value = t; grow(); },
         aoEstado: (ligado) => {
           mic.classList.toggle("gravando", ligado);
           mic.title = ligado ? "Ouvindo… clique para parar" : "Ditar a mensagem";

@@ -64,33 +64,70 @@
     motivo: Rec ? "" : "Este navegador não tem a API de reconhecimento de fala (hoje ela existe no Chrome e no Edge). Digite a mensagem, ou abra a demo no Chrome.",
     ativo: false,
     _rec: null,
+    _base: "",      // o que já estava escrito quando o ditado começou
+    _final: "",     // trechos já fechados pelo reconhecedor nesta sessão de fala
+    _parandoAPedido: false,
 
-    // aoTexto(t, final) recebe o parcial enquanto fala e o final ao encerrar
-    alternar({ aoTexto, aoEstado, aoErro }) {
+    // 🔴 DUAS REGRAS QUE O PADRÃO DA API QUEBRA E PRECISAM SER FORÇADAS:
+    //   (a) ele PARA SOZINHO no primeiro silêncio. `continuous = true` reduz isso,
+    //       mas o Chrome ainda dispara `onend` depois de uma pausa longa, então o
+    //       único jeito de "só para quando eu mandar" é RELIGAR no onend enquanto
+    //       o usuário não clicou de novo.
+    //   (b) cada sessão de reconhecimento começa do zero, então escrever o
+    //       resultado direto no campo APAGA o que já estava lá. Por isso guardamos
+    //       o texto anterior em `_base` e sempre compomos base + fechado + parcial.
+    alternar({ textoAtual, aoTexto, aoEstado, aoErro }) {
       if (!Rec) { aoErro && aoErro(this.motivo); return; }
       if (this.ativo) { this.parar(); return; }
+      const anterior = (textoAtual || "").replace(/\s+$/, "");
+      this._base = anterior ? anterior + " " : "";
+      this._final = "";
+      this._parandoAPedido = false;
+      this.ativo = true;
+      aoEstado && aoEstado(true);
+      this._ligar({ aoTexto, aoEstado, aoErro });
+    },
+
+    _ligar(cbs) {
       const r = new Rec();
       r.lang = "pt-BR";
       r.interimResults = true;
-      r.continuous = false;
+      r.continuous = true;
       r.onresult = (ev) => {
-        let t = "";
-        for (let i = ev.resultIndex; i < ev.results.length; i++) t += ev.results[i][0].transcript;
-        aoTexto && aoTexto(t, ev.results[ev.results.length - 1].isFinal);
+        let parcial = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) this._final += t;
+          else parcial += t;
+        }
+        cbs.aoTexto && cbs.aoTexto(this._base + this._final + parcial);
       };
-      // ⚠️ o fim tem TRÊS caminhos (parar na mão, silêncio, erro) e todos precisam
-      // devolver o botão ao estado normal, senão ele fica "gravando" para sempre
       r.onerror = (ev) => {
-        this.ativo = false; aoEstado && aoEstado(false);
-        const m = ev.error === "not-allowed"
+        // "no-speech" e "aborted" são fim de trecho, não falha: o onend religa.
+        if (ev.error === "no-speech" || ev.error === "aborted") return;
+        this.ativo = false; this._parandoAPedido = true;
+        cbs.aoEstado && cbs.aoEstado(false);
+        cbs.aoErro && cbs.aoErro(ev.error === "not-allowed"
           ? "O navegador bloqueou o microfone. Libere a permissão e tente de novo."
-          : "O ditado falhou (" + ev.error + ").";
-        aoErro && aoErro(m);
+          : "O ditado falhou (" + ev.error + ").");
       };
-      r.onend = () => { this.ativo = false; aoEstado && aoEstado(false); };
-      this._rec = r; this.ativo = true; aoEstado && aoEstado(true);
-      r.start();
+      r.onend = () => {
+        if (this.ativo && !this._parandoAPedido) {
+          // ⚠️ religar no mesmo instante estoura InvalidStateError; 250ms basta
+          setTimeout(() => { if (this.ativo && !this._parandoAPedido) this._ligar(cbs); }, 250);
+          return;
+        }
+        this.ativo = false;
+        cbs.aoEstado && cbs.aoEstado(false);
+      };
+      this._rec = r;
+      try { r.start(); } catch (e) { /* já estava rodando: o onend religa */ }
     },
-    parar() { if (this._rec) try { this._rec.stop(); } catch (e) {} this.ativo = false; },
+
+    parar() {
+      this._parandoAPedido = true;   // impede o religamento automático
+      this.ativo = false;
+      if (this._rec) try { this._rec.stop(); } catch (e) {}
+    },
   };
 })();

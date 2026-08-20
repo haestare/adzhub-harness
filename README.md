@@ -132,6 +132,9 @@ node build/test_md.js
 # testar o catálogo de modelos (filtro de tool-calling, ranking, grupos) - fetch falso
 node build/test_modelos.js
 
+# testar o ditado e o anexo (reconhecedor falso, sem browser)
+node build/test_voz.js
+
 # rebuildar o PDF do paper (usa Chromium headless)
 chromium --headless=new --no-pdf-header-footer \
   --print-to-pdf=paper/paper.pdf "file://$PWD/paper/paper.html"

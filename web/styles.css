@@ -544,3 +544,11 @@ table.fb-table { border-collapse: collapse; width: 100%; min-width: max-content;
 .menu-item.off { cursor: default; color: var(--txt-faint); }
 .menu-item.off:hover { background: transparent; }
 .menu-item.off::before { content: ""; }
+
+/* conversa que continua respondendo enquanto você olha outra */
+.conv .girando {
+  width: 13px; height: 13px; flex: none; border-radius: 50%;
+  border: 2px solid var(--line-2); border-top-color: var(--accent);
+  animation: sp .7s linear infinite;
+}
+.conv.rodando .txt b { color: var(--accent); }

@@ -16,7 +16,6 @@
     mode: sessionStorage.getItem("az_mode") || "sim",
     key: sessionStorage.getItem("az_key") || "",
     model: sessionStorage.getItem("az_model") || "openai/gpt-4o-mini",
-    running: false,
   };
 
   // ---- markdown-lite ------------------------------------------------------
@@ -204,7 +203,14 @@
   // ouvinte de clique, então os passos do trace parariam de abrir, sem erro.
   let messages = null;   // .messages da conversa ativa
   let liveTrace = null;  // .steps da conversa ativa
-  function revealAnswer(bubble, md, onDone) {
+  // 🔴 O TURNO PERTENCE À CONVERSA, NÃO À TELA. `chatAtual` é só a que está à
+  // vista; quem está rodando guarda os PRÓPRIOS nós, capturados no início do
+  // send(). Sem isso, trocar de conversa no meio de uma resposta faria os passos
+  // seguintes e a resposta final caírem no fio errado, que é pior que travar.
+  let chatAtual = null;
+  const sincronizarEnvio = () => { const b = $("#sendBtn"); if (b) b.disabled = !!(chatAtual && chatAtual.rodando); };
+  function revealAnswer(bubble, md, onDone, alvo) {
+    alvo = alvo || messages;
     if (reduced()) { bubble.innerHTML = renderMarkdown(md); onDone && onDone(); return; }
     const tokens = md.match(/\s+|\S+/g) || [];
     const perTick = 3 + Math.floor(tokens.length / 55); // rápido, escala com o tamanho
@@ -214,21 +220,22 @@
       i = Math.min(tokens.length, i + perTick);
       bubble.innerHTML = renderMarkdown(tokens.slice(0, i).join(""));
       bubble.insertAdjacentHTML("beforeend", '<span class="caret"></span>');
-      messages.scrollTop = messages.scrollHeight;
+      alvo.scrollTop = alvo.scrollHeight;
       if (i < tokens.length) requestAnimationFrame(stepFn);
       else { bubble.classList.remove("typing"); bubble.innerHTML = renderMarkdown(md); onDone && onDone(); }
     };
     requestAnimationFrame(stepFn);
   }
 
-  function addMsg(role, buildBody) {
+  function addMsg(role, buildBody, alvo) {
+    alvo = alvo || messages;
     const m = el("div", "msg " + role);
     m.append(el("div", "avatar", role === "user" ? "R" : "N"));
     const body = el("div", "body");
     body.append(el("div", "who", role === "user" ? "Você" : AZ.NEXO.nome));
     buildBody(body);
-    m.append(body); messages.append(m);
-    messages.scrollTop = messages.scrollHeight;
+    m.append(body); alvo.append(m);
+    alvo.scrollTop = alvo.scrollHeight;
     return body;
   }
 
@@ -291,17 +298,22 @@
 
   // ---- envio --------------------------------------------------------------
   async function send(text) {
-    if (!text.trim() || S.running) return;
+    const chat = chatAtual;
+    if (!text.trim() || !chat || chat.rodando) return;
+    // nós capturados AGORA: o resto do turno escreve aqui, mesmo que o gestor
+    // troque de conversa no meio (que é justamente o que deve poder fazer)
+    const msgs = chat.elMsgs, trace = chat.elSteps;
     // comando de barra é ação LOCAL de sessão: não entra no harness, não gasta token
     if (AZ.Comandos && AZ.Comandos.eComando(text)) {
-      addMsg("user", (body) => { const b = el("div", "bubble"); b.textContent = text; body.append(b); });
+      addMsg("user", (body) => { const b = el("div", "bubble"); b.textContent = text; body.append(b); }, msgs);
       const { resposta } = AZ.Comandos.executar(text, ctxComandos());
-      if (resposta) addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = renderMarkdown(resposta); body.append(b); });
-      messages.scrollTop = messages.scrollHeight;
+      if (resposta) addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = renderMarkdown(resposta); body.append(b); }, msgs);
       return;
     }
-    S.running = true; $("#sendBtn").disabled = true;
-    ultima = text;
+    chat.rodando = true; sincronizarEnvio(); if (AZ._chat) AZ._chat.marcarRodando();
+    // ⚠️ a última pergunta (para /refazer) é DA CONVERSA: com dois fios rodando,
+    // uma variável só faria o /refazer repetir a pergunta do outro chat
+    chat.ultima = text;
     const anexados = AZ.Anexos.lista.slice();
     addMsg("user", (body) => {
       const b = el("div", "bubble"); b.textContent = text; body.append(b);
@@ -310,9 +322,9 @@
         chip.textContent = "anexo: " + a.nome + (a.cortado ? " (cortado pelo harness)" : "");
         b.append(chip);
       });
-    });
+    }, msgs);
     if (AZ._chat) AZ._chat.registrar(text);   // a linha da lateral passa a mostrar o que foi perguntado
-    liveTrace.innerHTML = "";
+    trace.innerHTML = "";
     const steps = [];
     let toolIdx = 0, last = null; // last: grupo de tool consecutivo aberto
     let resetLive = () => {};     // definido abaixo, junto com o balão ao vivo
@@ -330,17 +342,17 @@
           last.detail.append(callBlock(step.name, step.args, step.result, last.count));
         } else {
           const c = toolCard(step.name, step.layer, step.label, [{ args: step.args, result: step.result }], toolIdx);
-          liveTrace.append(c.node);
+          trace.append(c.node);
           last = { name: step.name, node: c.node, detail: c.detail, idxSpan: c.idxSpan, mult: c.mult, count: 1, start: toolIdx };
         }
       } else {
-        liveTrace.append(plainStep(step)); last = null;
+        trace.append(plainStep(step)); last = null;
       }
-      liveTrace.scrollTop = liveTrace.scrollHeight;
+      trace.scrollTop = trace.scrollHeight;
     };
 
     const DOTS = '<span class="dots"><i></i><i></i><i></i></span>';
-    const thinkingBody = addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = DOTS; body.append(b); });
+    const thinkingBody = addMsg("bot", (body) => { const b = el("div", "bubble"); b.innerHTML = DOTS; body.append(b); }, msgs);
     const liveBubble = thinkingBody.querySelector(".bubble");
 
     // streaming: escreve o texto do LLM no balão conforme chega.
@@ -350,7 +362,7 @@
     const onDelta = (_piece, full) => {
       streamed = full;
       liveBubble.innerHTML = renderMarkdown(full) + '<span class="caret"></span>';
-      messages.scrollTop = messages.scrollHeight;
+      msgs.scrollTop = msgs.scrollHeight;
     };
     resetLive = () => { streamed = ""; liveBubble.innerHTML = DOTS; };
 
@@ -359,7 +371,7 @@
     // ⚠️ O motor simulado é um planner roteirizado: ele não lê arquivo, e fingir
     // que leu seria a única mentira desta demo. Diz na cara, na hora.
     if (anexos && S.mode !== "llm") {
-      avisoDoSistema("Recebi o arquivo, mas o motor simulado é roteirizado e não lê anexo: ele executa as tools sobre o mock. Para o agente realmente ler o que você anexou, troque para o modo LLM em ⚙ Configurar.");
+      avisoDoSistema("Recebi o arquivo, mas o motor simulado é roteirizado e não lê anexo: ele executa as tools sobre o mock. Para o agente realmente ler o que você anexou, troque para o modo LLM em ⚙ Configurar.", msgs);
     }
     try { out = await AZ.Harness.run({ message: text, mode: S.mode, apiKey: S.key, model: S.model, emit, onDelta, anexos }); }
     catch (e) { out = { answer: null, error: String(e && e.message || e) }; }
@@ -383,8 +395,8 @@
         groupSteps(steps).forEach((it) => box.append(it.type === "toolgroup" ? toolCard(it.name, it.layer, it.label, it.calls, it.startIdx).node : plainStep(it.step)));
         det.append(box); thinkingBody.append(det);
       }
-      messages.scrollTop = messages.scrollHeight;
-      S.running = false; $("#sendBtn").disabled = false;
+      msgs.scrollTop = msgs.scrollHeight;
+      chat.rodando = false; sincronizarEnvio(); if (AZ._chat) AZ._chat.marcarRodando();
       // ⚠️ o anexo vale para UM turno. Sem isto ele seria reenviado a cada
       // mensagem seguinte, e o custo de entrada (Quadro 1) cresceria calado.
       AZ.Anexos.limpar(); pintarAnexos();
@@ -394,7 +406,7 @@
       // já foi escrito ao vivo (token a token): só fixa o markdown final
       bubble.innerHTML = renderMarkdown(out.answer);
       finalize();
-    } else if (out && out.answer) revealAnswer(bubble, out.answer, finalize);
+    } else if (out && out.answer) revealAnswer(bubble, out.answer, finalize, msgs);
     else {
       bubble.innerHTML = renderMarkdown("**Não consegui responder.** " + (out && out.error ? out.error : "") +
         (S.mode === "llm" ? "\n\nConfira a key e o modelo em ⚙ Configurar, ou use o modo simulado." : ""));
@@ -403,13 +415,12 @@
   }
 
   // ---- contexto que os comandos recebem (o que eles podem mexer) ----------
-  let ultima = "";            // última pergunta de verdade (para /refazer)
   let ddModelos = null;       // listbox de modelos (js/dropdown.js)
   let temaAtual = "dark";     // espelha o tema; init() define de fato
   function ctxComandos() {
     return {
       S, messages, send, openModal, renderMarkdown,
-      ultimaPergunta: () => ultima,
+      ultimaPergunta: () => (chatAtual && chatAtual.ultima) || "",
       limparConversa() {                       // /limpar age só na conversa aberta
         messages.innerHTML = "";
         liveTrace.innerHTML = '<div class="empty">Envie uma mensagem para ver o harness orquestrar as tools.</div>';
@@ -455,13 +466,12 @@
   }
 
   // aviso do próprio app (não é o agente falando): erro de anexo, microfone, etc.
-  function avisoDoSistema(txt) {
+  function avisoDoSistema(txt, alvo) {
     addMsg("bot", (body) => {
       const b = el("div", "bubble aviso");
       b.textContent = txt;
       body.append(b);
-    });
-    messages.scrollTop = messages.scrollHeight;
+    }, alvo);
   }
 
   function pintarAnexos() {
@@ -522,10 +532,14 @@
     }
 
     function abrirChat(chat, disparar) {
-      if (S.running) return;                      // trocar de fio no meio de um turno perderia o trace
-      ativo = chat;
+      // ⚠️ Trocar de conversa NÃO é bloqueado por turno em andamento: a resposta
+      // continua caindo nos nós da conversa que a pediu, porque o send() capturou
+      // esses nós no início. O que muda aqui é só o que está à vista.
+      ativo = chat; chatAtual = chat;
       CHATS.forEach((c) => { c.elMsgs.classList.toggle("on", c === chat); c.elSteps.classList.toggle("on", c === chat); });
       messages = chat.elMsgs; liveTrace = chat.elSteps;
+      sincronizarEnvio();                       // o botão reflete a conversa à VISTA
+      chat.elMsgs.scrollTop = chat.elMsgs.scrollHeight;   // volta no pé, onde a conversa parou
       $("#statusTxt").textContent = chat.nome + " · Housewhey";
       // ⚠️ A abertura longa do NEXO só cabe UMA vez. Repetir aquele texto inteiro em
       // toda conversa nova é ruído, e pior: uma bolha aparecendo sozinha ao abrir o
@@ -554,20 +568,30 @@
       const vistas = CHATS.filter((c) => !f || (c.nome + " " + c.preview).toLowerCase().includes(f));
       if (!vistas.length) { convs.append(el("div", "empty", "Nenhuma conversa com esse nome.")); return; }
       vistas.forEach((c) => {
-        const linha = el("div", "conv" + (c === ativo ? " on" : ""));
+        const linha = el("div", "conv" + (c === ativo ? " on" : "") + (c.rodando ? " rodando" : ""));
         linha.innerHTML = `<span class="av ${c.av}">${c.nome.slice(0, 1)}</span>`
-          + `<span class="txt"><b></b><small></small></span><span class="quando"></span>`;
+          + `<span class="txt"><b></b><small></small></span>`
+          // ⚠️ quem sai da conversa precisa VER que ela continua trabalhando,
+          // senão "posso sair" vira "perdi a resposta"
+          + (c.rodando ? '<span class="girando" title="respondendo…"></span>' : `<span class="quando"></span>`);
         // textContent e não innerHTML: o preview vem do que o gestor digitou
         linha.querySelector("b").textContent = c.nome;
         linha.querySelector("small").textContent = c.preview;
-        linha.querySelector(".quando").textContent = c.quando;
-          linha.onclick = () => abrirChat(c, true);
+        // ⚠️ com a conversa rodando o lugar do horário é do indicador, então
+        // este nó pode NÃO existir. Sem a guarda, o querySelector devolve null,
+        // a linha estoura e a lateral inteira fica vazia no meio do turno.
+        const quando = linha.querySelector(".quando");
+        if (quando) quando.textContent = c.quando;
+        linha.onclick = () => abrirChat(c, true);
         convs.append(linha);
       });
     }
 
     // exposto para o send() marcar a conversa como usada e atualizar o preview
     AZ._chat = {
+      // repinta a lateral quando um turno começa ou termina (o indicador de
+      // "respondendo" vive lá, e é o que permite sair da conversa sem perder o fio)
+      marcarRodando() { pintarConversas($("#filtroTarefa").value); },
       registrar(texto) {
         if (!ativo) return;
         ativo.usado = true; ativo.preview = texto; ativo.quando = agora();

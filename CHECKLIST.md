@@ -15,7 +15,8 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Achado próprio, medido | ✅ Quadro 1: entrada de 2,9k → 11,3k tokens contra ~434 de saída num turno de 5 passos |
 | O que ficou de fora de propósito | ✅ §7 nomeia a camada de integrações (conectar contas, OAuth, cofre de credencial, estado de conexão, multi-conta) e a geração de criativo, com a razão honesta: escopo do harness desconhecido, não descuido. E mostra que a tese acomoda isso sem mexer no loop |
 | As 11 perguntas do roteiro | ✅ mapa em `paper/GUIA-DO-PAPER.md` |
-| Figura + tabela + referências | ✅ Figura 1, Tabela 1, 6 refs |
+| Figura + tabela + referências | ✅ Figura 1, Quadro 1, Tabelas 1-3, 6 refs |
+| Palavras-chave no formato do modelo | ✅ 8 termos: os 3 obrigatórios (`harness`, tipo escolhido, domínio AdzHub) mais 5 próprios, dentro da faixa de 3 a 6 |
 | Fontes de estudo registradas | ✅ OpenHands, ReAct, CodeAct, **RLM (2512.24601)**, Zep/Graphiti, Anthropic |
 
 ## Protótipo (peso 25%, recomendado)

@@ -30,7 +30,6 @@
   --warn: #fbbf24;  --phase-bg: #30250d;
   --tok: #fbbf24;   --tok-bg: #30250d;
   --danger: #f87171;
-  --balao: #1b2230;   --balao-bd: transparent;   /* balão do agente */
   --th-bg: #1b2230;
   --code-bg: #10151f; --code-fg: #cbd5e6;
   --pre-bg: #0d121b;  --pre-fg: #c3cbdb;
@@ -48,46 +47,43 @@
 }
 
 :root[data-theme="light"] {
-  /* 🔴 O CLARO NÃO É "TUDO BRANCO", E O ERRO ANTERIOR FOI DEIXAR A MAIOR
-     SUPERFÍCIE (o canvas da conversa) em #fff: é ela que ofusca, porque ocupa
-     metade da tela e devolve luz o tempo todo. Aqui o branco virou RECURSO
-     ESCASSO: ele aparece só no que precisa saltar (cartão, composer, balão do
-     agente), e o resto é uma escada de cinzas MORNOS, não azulados. Cinza com
-     um toque de amarelo lê como papel; cinza azulado lê como tela de hospital.
-     A escada, do fundo para a frente: trilhos, canvas, cartão. */
-  --bg: #f4f5f7;          /* canvas da conversa: papel, não holofote */
-  --bg-2: #eaecf1;        /* trilhos: lateral e painel da direita, um passo atrás */
-  --panel: #ffffff;       /* o que SALTA: cartão, composer, balão do agente */
-  --panel-2: #e7e9ef;     /* superfície secundária: busca, chips, cabeçalho de tabela */
-  --balao: #ffffff;   --balao-bd: #dfe2e9;   /* balão do agente: cartão sobre o canvas */
-  --line: #dcdfe6;
-  --line-2: #c5cad3;
-  --txt: #1b1f27;         /* quase-preto MORNO; #0f172a puxa azul e endurece a leitura */
-  --txt-dim: #545b68;
-  --txt-faint: #858c99;
+  /* 🔴 O CLARO NÃO É "TUDO BRANCO". Com canvas, trilhos e cartões todos em #fff,
+     as três colunas viram uma chapa só e a tela parece lavada. Aqui existe uma
+     ESCADA de três degraus: o canvas da conversa é o mais claro (é onde a leitura
+     acontece), os trilhos laterais são um cinza-azulado um passo abaixo, e os
+     cartões voltam ao branco POR CIMA do trilho, o que os faz flutuar sem
+     precisar de sombra pesada. */
+  --bg: #ffffff;          /* canvas da conversa, o mais claro */
+  --bg-2: #eaeef4;        /* trilhos: lateral e painel da direita */
+  --panel: #ffffff;       /* cartão sobre o trilho */
+  --panel-2: #e6ebf2;     /* superfície secundária: busca, balão do agente, chips */
+  --line: #d7dee8;
+  --line-2: #c2ccda;
+  --txt: #0f172a;
+  --txt-dim: #4d5766;
+  --txt-faint: #7c8798;
   --accent: #2563eb;
   --accent-2: #3b82f6;
   --on-accent: #ffffff;
   --mark-a: #f97316;
   --mark-b: #2563eb;
-  --sel: #e2eaff;
-  --api: #1d4ed8;   --api-bg: #e0e9fd;
-  --mem: #6a3dcf;   --mem-bg: #ebe4fb;
-  --app: #10774a;   --app-bg: #daf0e5;
-  --warn: #8a5a08;  --phase-bg: #f8e8c6;
-  --tok: #8a5a08;   --tok-bg: #f8e8c6;
-  --danger: #c03a3a;
-  --th-bg: #e7e9ef;
-  --code-bg: #eceef4; --code-fg: #2b3446;
-  --pre-bg: #f0f2f6;  --pre-fg: #2a3345;
-  --zebra: rgba(27, 31, 39, .025);
-  --hover-row: rgba(37, 99, 235, .08);
-  --chip-blue: rgba(37, 99, 235, .11);
-  --chip-blue-bd: rgba(37, 99, 235, .28);
-  --overlay: rgba(23, 27, 35, .38);
-  --sombra: 0 1px 2px rgba(27, 31, 39, .05), 0 6px 16px rgba(27, 31, 39, .07);
+  --sel: #dbe7ff;
+  --api: #1d4ed8;   --api-bg: #dbe8fe;
+  --mem: #6d3fd4;   --mem-bg: #e9e0fc;
+  --app: #0f7f4f;   --app-bg: #d6f2e4;
+  --warn: #94600a;  --phase-bg: #fbe9c4;
+  --tok: #94600a;   --tok-bg: #fbe9c4;
+  --danger: #c73b3b;
+  --th-bg: #e6ebf2;
+  --code-bg: #eef2f8; --code-fg: #26324a;
+  --pre-bg: #f2f5fa;  --pre-fg: #2a3345;
+  --zebra: rgba(15, 23, 42, .028);
+  --hover-row: rgba(37, 99, 235, .09);
+  --chip-blue: rgba(37, 99, 235, .12);
+  --chip-blue-bd: rgba(37, 99, 235, .30);
+  --overlay: rgba(15, 23, 42, .40);
+  --sombra: 0 1px 2px rgba(15, 23, 42, .06), 0 6px 18px rgba(15, 23, 42, .06);
 }
-
 
 
 * { box-sizing: border-box; }
@@ -162,7 +158,7 @@ body {
 
 /* ---- centro: a conversa -------------------------------------------------- */
 .chat { display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
-.chat-top { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--bg-2); }
+.chat-top { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
 .chat-id b { display: block; font-size: 14.5px; font-weight: 650; line-height: 1.25; }
 .chat-id small { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--txt-faint); }
 .chat-id .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; }
@@ -181,27 +177,26 @@ body {
    continuam exatamente onde estavam. */
 .msg-host { flex: 1; min-height: 0; display: flex; }
 .messages { display: none; flex: 1; overflow-y: auto; padding: 22px 24px 10px; scroll-behavior: smooth; }
-.messages.on.desta-conta { display: block; }
+.messages.on { display: block; }
 .trace-host { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .trace-host > .steps { display: none; }
-.trace-host > .steps.on.desta-conta { display: flex; overflow-y: auto; overflow-x: hidden; }
+.trace-host > .steps.on { display: flex; overflow-y: auto; overflow-x: hidden; }
 .msg { max-width: 820px; margin: 0 auto 16px; display: flex; gap: 10px; align-items: flex-start; animation: msgIn .42s var(--spring) both; }
 @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .msg .avatar { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; color: #fff; background: linear-gradient(140deg, var(--mark-a), var(--mark-b)); margin-top: 3px; }
 .msg .body { min-width: 0; max-width: 100%; }
 .msg .who { display: none; }
-.bubble { background: var(--balao); border: 1px solid var(--balao-bd); border-radius: 16px 16px 16px 4px; padding: 12px 16px; }
+.bubble { background: var(--panel-2); border-radius: 16px 16px 16px 4px; padding: 12px 16px; }
 /* mensagem do gestor: azul, à direita, como no design */
 .msg.user { flex-direction: row-reverse; }
 .msg.user .avatar { display: none; }
 .msg.user .body { max-width: 76%; }
-.msg.user .bubble { background: var(--accent); border-color: var(--accent); color: var(--on-accent); border-radius: 16px 16px 4px 16px; }
+.msg.user .bubble { background: var(--accent); color: var(--on-accent); border-radius: 16px 16px 4px 16px; }
 .msg.user .bubble strong, .msg.user .bubble b { color: var(--on-accent); }
 .msg.user .bubble code { background: rgba(255, 255, 255, .18); border-color: transparent; color: var(--on-accent); }
 
 /* ---- composer ------------------------------------------------------------ */
 .composer-wrap { padding: 10px 24px 16px; background: var(--bg); }
-.chip { background: var(--panel); }
 .chips { max-width: 820px; margin: 0 auto 10px; display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { font-size: 12.5px; color: var(--txt-dim); background: var(--panel-2); border: 1px solid transparent; padding: 6px 12px; border-radius: 18px; cursor: pointer; transition: transform .15s var(--ease), color .15s, border-color .15s; }
 .chip:hover { color: var(--txt); border-color: var(--accent); transform: translateY(-2px); }
@@ -363,10 +358,7 @@ table.fb-table { border-collapse: collapse; width: 100%; min-width: max-content;
 
 /* steps */
 .steps { display: flex; flex-direction: column; gap: 8px; }
-/* ⚠️ `flex-shrink` é 1 por padrão: numa coluna flex com rolagem, os cartões do
-   trace ENCOLHEM quando a lista fica mais alta que o painel, e como o cartão
-   tem overflow:hidden o texto some cortado no meio da linha. Some sem erro. */
-.step { flex: none; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow: hidden; }
+.step { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow: hidden; }
 #liveTrace .step { animation: stepIn .36s var(--ease) both; }
 @keyframes stepIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
 /* ⚠️ nome de tool em mono é largo (run_app_analise_criativos) e o painel tem
@@ -560,17 +552,3 @@ table.fb-table { border-collapse: collapse; width: 100%; min-width: max-content;
   animation: sp .7s linear infinite;
 }
 .conv.rodando .txt b { color: var(--accent); }
-
-/* ---- seletor de cliente (multi-conta) ------------------------------------ */
-.conta-wrap { position: relative; margin: 0 12px 10px; }
-.conta {
-  width: 100%; display: flex; align-items: center; gap: 9px; cursor: pointer; text-align: left;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
-  padding: 7px 10px; color: var(--txt); font-family: var(--sans); font-size: 13px;
-  transition: border-color .15s;
-}
-.conta:hover { border-color: var(--accent); }
-.conta-nome { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.av-conta { width: 24px; height: 24px; font-size: 10.5px; background: linear-gradient(140deg, var(--mark-a), var(--mark-b)); }
-.conta-wrap .menu { left: 0; right: 0; top: calc(100% + 6px); bottom: auto; min-width: 0; }
-.menu-item.atual { color: var(--accent); font-weight: 600; }

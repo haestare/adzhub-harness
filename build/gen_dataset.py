@@ -13,10 +13,7 @@ Problemas plantados (NAO rotulados no dado):
 """
 import json, os, sys, datetime
 
-# mesmo motivo do embed_data.py: o padrão sai da raiz do PRÓPRIO projeto, senão
-# um `python3 build/gen_dataset.py` sem argumento só funciona no workspace
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(RAIZ, "data")
+OUT = sys.argv[1] if len(sys.argv) > 1 else "adzhub-harness/data"
 os.makedirs(OUT, exist_ok=True)
 BASE = datetime.date(2026, 6, 1)          # base fixa
 def d(offset_days):                        # data ISO a partir da base
@@ -26,12 +23,9 @@ def dt(offset_days, hh, mm):
     return f"{day.isoformat()}T{hh:02d}:{mm:02d}:00-03:00"
 
 CLIENT = "cli_housewhey"
-PASTA = "housewhey"          # subpasta do cliente atual (multi-conta)
 
 def dump(name, obj):
-    destino = os.path.join(OUT, PASTA)
-    os.makedirs(destino, exist_ok=True)
-    p = os.path.join(destino, name)
+    p = os.path.join(OUT, name)
     with open(p, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
     print("wrote", p, os.path.getsize(p), "bytes")
@@ -337,130 +331,5 @@ conversas = {
   ]
 }
 dump("conversas.json", conversas)
-
-
-
-# ====================================================================
-# 2o CLIENTE - BRAVO PET (multi-conta)
-#
-# Existe para provar ISOLAMENTO, nao para ser um segundo quebra-cabeca. E de
-# proposito um GRUPO DE CONTROLE: conta saudavel, com o problema INVERTIDO do
-# Housewhey (verba sobrando em vez de estourando), origem declarada batendo com
-# o UTM e criativo sem saturacao. Se o agente responder a mesma coisa nas duas
-# contas, ele nao esta lendo o dado - e isso da para conferir a olho na demo.
-# ====================================================================
-CLIENT = "cli_bravopet"
-PASTA = "bravopet"
-
-dump("supercerebro_graph.json", {
-  "client_id": CLIENT,
-  "generated_note": "Recorte de memoria da operacao. Use search_client_context para trazer so o relevante.",
-  "nodes": [
-    {"id":"hub_spot","type":"hub","label":"SPOT","props":{"kind":"agencia"}},
-    {"id":"cli_bravopet","type":"hub","label":"Bravo Pet","props":{"segmento":"e-commerce de racao e petiscos premium","ticket_medio_brl":242,"entrou_em":d(31)}},
-    {"id":"p_aline","type":"person","label":"Aline","props":{"role":"tráfego","canais":["Meta Ads"]}},
-    {"id":"p_marcos","type":"person","label":"Marcos","props":{"role":"gestão de conta","responsavel_por":"KPIs e relação com cliente"}},
-    {"id":"p_sofia","type":"person","label":"Sofia","props":{"role":"cliente (Bravo Pet)","responsavel_por":"decisão de verba e aprovação de peça"}},
-    {"id":"camp_racao","type":"campaign","label":"Ração Premium - Aquisição","props":{"objetivo":"vendas","status":"ativa","budget_diario_brl":100}},
-    {"id":"camp_petisco","type":"campaign","label":"Petiscos - Recompra","props":{"objetivo":"vendas","status":"ativa","budget_diario_brl":40}},
-    {"id":"task_escala","type":"task","label":"Decidir escala da Ração Premium","props":{"status":"aberta","dono":"p_sofia","aberta_em":d(66)}}
-  ],
-  "edges": [
-    {"from":"hub_spot","to":"cli_bravopet","rel":"atende"},
-    {"from":"p_aline","to":"camp_racao","rel":"opera"},
-    {"from":"p_aline","to":"camp_petisco","rel":"opera"},
-    {"from":"p_marcos","to":"cli_bravopet","rel":"gerencia"},
-    {"from":"p_sofia","to":"task_escala","rel":"responsavel"},
-    {"from":"task_escala","to":"camp_racao","rel":"sobre"}
-  ]
-})
-
-dump("supercerebro_timeline.json", {
-  "client_id": CLIENT,
-  "events": [
-    {"id":"ev_b1","occurred_at":dt(31,10,0),"type":"onboarding","titulo":"Conta entrou na SPOT","resumo":"Bravo Pet migra de agencia. Meta unica no comeco: aquisicao de cliente novo de racao premium."},
-    {"id":"ev_b2","occurred_at":dt(52,15,30),"type":"decisao","titulo":"CPA alvo definido em R$ 80","resumo":"Sofia aceitou CPA de ate R$ 80 para cliente novo, considerando ticket de R$ 242 e recompra."},
-    {"id":"ev_b3","occurred_at":dt(64,11,0),"type":"observacao","titulo":"Campanha entregando abaixo do budget","resumo":"Aline notou que a Racao Premium nao gasta o budget diario cheio ha duas semanas."},
-    {"id":"ev_b4","occurred_at":dt(68,16,45),"type":"call","titulo":"Call quinzenal","resumo":"Marcos apresentou resultado dentro da meta. Sofia perguntou se da para escalar sem estragar o CPA."},
-    {"id":"ev_b5","occurred_at":dt(70,9,20),"type":"pendencia","titulo":"Aguardando decisao de verba","resumo":"Proposta de subir o budget diario de R$ 100 para R$ 160 esta com a Sofia."}
-  ]
-})
-
-dump("api_meta_ads.json", {
-  "client_id": CLIENT, "currency": "BRL", "period": {"since": d(56), "until": d(70)},
-  "note": "Numeros ficticios. Conta saudavel: entrega ABAIXO do budget, sem saturacao.",
-  "campaigns": [
-    {"campaign_id":"cmp_b_racao","campaign_name":"Ração Premium - Aquisição","status":"ACTIVE","daily_budget_brl":100.0,"spend_brl":1180.0,
-     "adsets":[{"adset_id":"as_b_frio","adset_name":"Público frio - donos de cão","daily_budget_brl":100.0,"spend_brl":1180.0,
-       "ads":[
-         {"ad_id":"ad_racao_comparativo","ad_name":"Comparativo de rótulo","status":"ACTIVE","spend_brl":760.0,"impressions":141000,"clicks":3120,"ctr":2.21,"frequency":1.6,"hook_rate":0.31,"leads_meta":11,"utm_content":"ad_racao_comparativo"},
-         {"ad_id":"ad_racao_ugc","ad_name":"UGC - cachorro comendo","status":"ACTIVE","spend_brl":420.0,"impressions":82000,"clicks":1910,"ctr":2.33,"frequency":1.4,"hook_rate":0.34,"leads_meta":6,"utm_content":"ad_racao_ugc"}
-       ]}]},
-    {"campaign_id":"cmp_b_petisco","campaign_name":"Petiscos - Recompra","status":"ACTIVE","daily_budget_brl":40.0,"spend_brl":620.0,
-     "adsets":[{"adset_id":"as_b_base","adset_name":"Base de compradores","daily_budget_brl":40.0,"spend_brl":620.0,
-       "ads":[
-         {"ad_id":"ad_petisco_oferta","ad_name":"Leve 3 pague 2","status":"ACTIVE","spend_brl":620.0,"impressions":58000,"clicks":1640,"ctr":2.83,"frequency":2.1,"hook_rate":0.29,"leads_meta":9,"utm_content":"ad_petisco_oferta"}
-       ]}]}
-  ],
-  "insights_semanais": {
-    "ad_racao_comparativo":[{"semana":d(56),"hook_rate":0.30,"frequency":1.4},{"semana":d(63),"hook_rate":0.31,"frequency":1.6}],
-    "ad_racao_ugc":[{"semana":d(56),"hook_rate":0.33,"frequency":1.2},{"semana":d(63),"hook_rate":0.34,"frequency":1.4}],
-    "ad_petisco_oferta":[{"semana":d(56),"hook_rate":0.28,"frequency":1.9},{"semana":d(63),"hook_rate":0.29,"frequency":2.1}]
-  }
-})
-
-leads_b = []
-def lead_b(i, ad, status, valor, origem):
-    leads_b.append({"lead_id":f"lead_b_{i:03d}","criado_em":d(56 + (i % 14)),"nome":f"Cliente Bravo {i:03d}",
-      "origem_declarada":origem,"utm_source":"facebook","utm_medium":"paid","utm_content":ad,
-      "status":status,"valor_brl":valor})
-for i, ad in enumerate(["ad_racao_comparativo"]*9 + ["ad_racao_ugc"]*5 + ["ad_petisco_oferta"]*8, start=1):
-    ganho = i % 3 != 0
-    lead_b(i, ad, "ganho" if ganho else "perdido", 242.0 if ganho else 0.0, "Instagram" if i % 2 else "Facebook")
-dump("api_crm_leads.json", {
-  "client_id": CLIENT,
-  "note": "Numeros ficticios. Origem declarada bate com o UTM: nenhuma discrepancia plantada aqui.",
-  "leads": leads_b
-})
-
-dump("app_analise_criativos.json", {
-  "client_id": CLIENT, "app": "Análise de Criativos", "gerado_em": d(70),
-  "metodologia": "Mesma regua do outro cliente: hook rate, frequencia e custo por venda REAL do CRM, nunca o resultado declarado no gerenciador.",
-  "ranking": [
-    {"ad_id":"ad_racao_ugc","posicao":1,"leitura":"melhor hook (34%) e frequencia baixa (1,4): ainda tem publico para pegar","recomendacao":"escalar"},
-    {"ad_id":"ad_racao_comparativo","posicao":2,"leitura":"volume maior e CPA dentro da meta; hook estavel","recomendacao":"seguir"},
-    {"ad_id":"ad_petisco_oferta","posicao":3,"leitura":"frequencia subindo (1,9 -> 2,1) mas ainda longe de fadiga","recomendacao":"seguir e vigiar"}
-  ],
-  "pecas_bloqueadas": []
-})
-
-dump("app_mapa_solucao.json", {
-  "client_id": CLIENT, "app": "Mapa de Solução", "atualizado_em": d(58),
-  "marca": {"nome":"Bravo Pet","tom":"prático e afetivo, sem infantilizar o tutor",
-            "nao_pode_falar":["cura de doença", "veterinário recomenda (sem laudo)", "comparação nominal com concorrente"]},
-  "oferta": {"produto_carro_chefe":"Ração Premium 15kg","ticket_medio_brl":242,"recompra_media_dias":38},
-  "promessa": "Comida de verdade para o cão, com rótulo que o tutor entende."
-})
-
-dump("conversas.json", {
-  "client_id": CLIENT,
-  "threads": [
-    {"id":"conv_b_call","tipo":"call","canal":"Google Meet","occurred_at":dt(68,16,45),
-     "participantes":["p_marcos","p_aline","p_sofia"],"titulo":"Call quinzenal - Bravo Pet",
-     "resumo_pontos":[
-       "Marcos: CPA em R$ 62, abaixo da meta de R$ 80.",
-       "Aline: a Racao Premium nao esta gastando o budget diario cheio; entrega esta limitada, nao o contrario.",
-       "Sofia: 'se esta dando certo, por que nao esta gastando tudo?'",
-       "Combinado: SPOT traz proposta de subir o budget e a estimativa de impacto no CPA."
-     ]},
-    {"id":"conv_b_wpp","tipo":"whatsapp","canal":"WhatsApp","occurred_at":dt(70,9,20),
-     "participantes":["p_marcos","p_sofia"],"titulo":"WhatsApp - Marcos e Sofia (verba)",
-     "mensagens":[
-       {"de":"p_marcos","texto":"Sofia, proposta: subir a Racao Premium de R$ 100 para R$ 160 por dia."},
-       {"de":"p_sofia","texto":"Deixa eu ver o caixa da semana e te falo. Nao quero estragar o CPA."},
-       {"de":"p_marcos","texto":"Entendo. A frequencia esta baixa, entao ainda tem publico novo pra pegar."}
-     ]}
-  ]
-})
 
 print("\nOK - dataset gerado em", OUT)

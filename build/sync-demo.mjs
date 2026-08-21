@@ -26,10 +26,14 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 
 const REPO = "https://github.com/haestare/adzhub-harness";
 const CLONE = process.env.ADZHUB_DEPLOY_DIR || path.join(os.homedir(), "adzhub-harness-deploy");
-const SRC = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+// 🔴 fileURLToPath, NUNCA `new URL(...).pathname`: no Windows o pathname vem como
+// `/D:/Claude/...`, que o path.resolve le como absoluto a partir da raiz do drive
+// atual e devolve `D:\D:\Claude\...`. Escrito num container Linux, onde passa.
+const SRC = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const IGNORAR = new Set([".git", "node_modules", ".DS_Store"]);
 const SO_DO_DEPLOY = ["package.json", "server.js"]; // existem só no repo de deploy
 

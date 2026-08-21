@@ -11,20 +11,7 @@
 (function () {
   const AZ = (window.AZ = window.AZ || {});
   const CLIENT = "cli_housewhey";
-  // 🔴 A CONTA É ESTADO DO HARNESS, NUNCA ARGUMENTO DE TOOL. Nenhuma tool recebe
-  // `cliente`, então o modelo não tem como pedir dado de outra conta nem por
-  // engano nem de propósito: ele simplesmente não alcança. Quem troca de cliente
-  // é o humano, e o harness reescopa TUDO de uma vez (memória, APIs e Apps).
-  // Se a conta fosse um parâmetro, isolamento viraria promessa de prompt.
-  const RAW = () => window.ADZHUB_DATA || {};
-  AZ.contas = {
-    atual: (RAW().padrao || "housewhey"),
-    lista() { const r = RAW(); return r.clientes ? Object.keys(r.clientes) : [this.atual]; },
-    nome(id) { const r = RAW(); return (r.clientes && r.clientes[id || this.atual] || {}).nome || (id || this.atual); },
-    definir(id) { if (RAW().clientes && RAW().clientes[id]) this.atual = id; return this.atual; },
-  };
-  // compatível com um data.js antigo (sem o mapa de clientes)
-  const D = () => { const r = RAW(); return r.clientes ? r.clientes[AZ.contas.atual] : r; };
+  const D = () => window.ADZHUB_DATA;
 
   const norm = (s) =>
     (s == null ? "" : String(s))

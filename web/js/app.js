@@ -445,7 +445,7 @@
   function refreshCfgUI() {
     $("#modePill").textContent = "modo: " + (S.mode === "llm" ? "LLM · " + S.model : "simulado");
     const cfg = $("#cfg"); cfg.innerHTML = "";
-    const chips = ["conta=" + (AZ.contas ? AZ.contas.atual : "?"), "max_steps=" + AZ.HARNESS_CONFIG.maxSteps, "tools=" + AZ.HARNESS_CONFIG.allowlist.length + " (allowlist)", "memória=hidratada", "loop=ReAct"];
+    const chips = ["max_steps=" + AZ.HARNESS_CONFIG.maxSteps, "tools=" + AZ.HARNESS_CONFIG.allowlist.length + " (allowlist)", "memória=hidratada", "loop=ReAct"];
     // build visível: sem isso não dá para saber, olhando a tela, se o deploy pegou
     if (window.__BUILD) chips.push("build=" + window.__BUILD);
     chips.forEach((k) => cfg.append(el("span", "kv", k)));
@@ -503,39 +503,19 @@
     const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; };
     input.addEventListener("input", grow);
 
-    // ⚠️ As tarefas são POR CLIENTE. Reaproveitar as do Housewhey numa conta de
-    // ração faria a demo perguntar sobre "Ômega 3" no cliente errado, que é
-    // exatamente a cara de um sistema que não sabe em que conta está.
-    const TAREFAS_POR_CONTA = {
-      housewhey: [
-        { nome: "Relatório de criativos", sub: "Meta × CRM por utm_content", av: "av-1",
-          prompt: "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato." },
-        { nome: "Diagnóstico da conta", sub: "o CPA do Ômega 3 subiu", av: "av-2",
-          prompt: "O CPA do Ômega 3 subiu. Investigue a causa e me diga o próximo passo." },
-        { nome: "Origem dos leads", sub: "o que o lead diz × o que o UTM diz", av: "av-3",
-          prompt: "Vários leads dizem que vieram do Google, mas quase não rodamos Google. O que está acontecendo?" },
-        { nome: "Pauta da call", sub: "o que mudou e o que ficou pendente", av: "av-4",
-          prompt: "Monte a pauta da próxima call com a Housewhey." },
-      ],
-      bravopet: [
-        { nome: "Relatório de criativos", sub: "Meta × CRM por utm_content", av: "av-1",
-          prompt: "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato." },
-        { nome: "Verba sobrando", sub: "a campanha não gasta o budget", av: "av-2",
-          prompt: "A campanha de Ração Premium não está gastando o budget diário cheio. Investigue e me diga se dá para escalar." },
-        { nome: "Saúde dos criativos", sub: "tem fadiga chegando?", av: "av-3",
-          prompt: "Os criativos estão saturando? Me diga o que escalar e o que vigiar." },
-        { nome: "Pauta da call", sub: "o que mudou e o que ficou pendente", av: "av-4",
-          prompt: "Monte a pauta da próxima call com a Bravo Pet." },
-      ],
-    };
-    const tarefasDaConta = () => TAREFAS_POR_CONTA[AZ.contas.atual] || TAREFAS_POR_CONTA.housewhey;
+    const TAREFAS = [
+      { nome: "Relatório de criativos", sub: "Meta × CRM por utm_content", av: "av-1",
+        prompt: "Cruze o gasto por anúncio no Meta com as vendas no CRM por utm_content e me diga qual criativo está caro e qual está barato." },
+      { nome: "Diagnóstico da conta", sub: "o CPA do Ômega 3 subiu", av: "av-2",
+        prompt: "O CPA do Ômega 3 subiu. Investigue a causa e me diga o próximo passo." },
+      { nome: "Origem dos leads", sub: "o que o lead diz × o que o UTM diz", av: "av-3",
+        prompt: "Vários leads dizem que vieram do Google, mas quase não rodamos Google. O que está acontecendo?" },
+      { nome: "Pauta da call", sub: "o que mudou e o que ficou pendente", av: "av-4",
+        prompt: "Monte a pauta da próxima call com a Housewhey." },
+    ];
 
     const msgHost = $("#msgHost"), traceHost = $("#traceHost"), convs = $("#convs");
-    // 🔴 As conversas são POR CLIENTE. Misturar os fios de duas contas seria o
-    // vazamento que o escopo por conta existe para impedir: o histórico de um
-    // cliente entraria no contexto do outro no turno seguinte.
-    const PORCONTA = {};
-    let CHATS = [];
+    const CHATS = [];
     let ativo = null;
     const agora = () => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
@@ -546,7 +526,6 @@
         elMsgs: el("div", "messages"), elSteps: el("div", "steps"),
       };
       chat.elSteps.innerHTML = '<div class="empty">Envie uma mensagem para ver o harness orquestrar as tools.</div>';
-      chat.conta = AZ.contas.atual;
       msgHost.append(chat.elMsgs); traceHost.append(chat.elSteps);
       CHATS.push(chat);
       return chat;
@@ -620,50 +599,8 @@
       },
     };
 
-    const chips = $("#chips");
-    const pintarChips = () => {
-      chips.innerHTML = "";
-      CHATS.forEach((chat) => {
-        const c = el("div", "chip", chat.nome);
-        c.onclick = () => abrirChat(chat, true);
-        chips.append(c);
-      });
-    };
-
-    function montarConta(id) {
-      AZ.contas.definir(id);
-      if (!PORCONTA[id]) { CHATS = PORCONTA[id] = []; tarefasDaConta().forEach(criarChat); }
-      else CHATS = PORCONTA[id];
-      // só o DOM do cliente ativo fica na tela; o do outro continua existindo,
-      // então voltar para ele traz o histórico intacto
-      Object.keys(PORCONTA).forEach((k) => PORCONTA[k].forEach((c) => {
-        c.elMsgs.classList.toggle("desta-conta", k === id);
-        c.elSteps.classList.toggle("desta-conta", k === id);
-      }));
-      $("#contaNome").textContent = AZ.contas.nome(id);
-      $("#contaIni").textContent = AZ.contas.nome(id).slice(0, 1);
-      pintarChips();
-      abrirChat(CHATS[0], false);
-      refreshCfgUI();
-    }
-
-    const menuConta = $("#menuConta");
-    AZ.contas.lista().forEach((id) => {
-      const it = el("div", "menu-item");
-      it.innerHTML = `<span>${AZ.contas.nome(id)}</span>`;
-      it.dataset.conta = id;
-      it.onclick = () => { menuConta.classList.remove("on"); if (id !== AZ.contas.atual) montarConta(id); };
-      menuConta.append(it);
-    });
-    $("#contaBtn").onclick = (e) => {
-      e.stopPropagation();
-      menuConta.querySelectorAll(".menu-item").forEach((i) => i.classList.toggle("atual", i.dataset.conta === AZ.contas.atual));
-      menuConta.classList.toggle("on");
-    };
-    document.addEventListener("click", () => menuConta.classList.remove("on"));
-    menuConta.addEventListener("click", (e) => e.stopPropagation());
-
-    montarConta(AZ.contas.atual);   // abre a demo sem perguntar nada
+    TAREFAS.forEach(criarChat);
+    abrirChat(CHATS[0], false);   // abre a demo sem perguntar nada
     $("#filtroTarefa").addEventListener("input", (e) => pintarConversas(e.target.value));
     $("#novoChat").onclick = () => {
       const n = criarChat({ nome: "Nova conversa", sub: "sem mensagens ainda", av: "av-" + (1 + CHATS.length % 4) });
@@ -671,6 +608,12 @@
     };
 
     // os chips continuam existindo, mas agora ABREM a conversa daquela tarefa
+    const chips = $("#chips");
+    TAREFAS.forEach((t, i) => {
+      const c = el("div", "chip", t.nome);
+      c.onclick = () => abrirChat(CHATS[i], true);
+      chips.append(c);
+    });
 
     // ---- listbox de modelos --------------------------------------------------
     // Não é um <select> porque o nativo abre sempre rolado até o item escolhido,

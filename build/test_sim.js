@@ -1,7 +1,5 @@
 const fs = require('fs'), vm = require('vm');
-// ⚠️ caminho relativo ao PRÓPRIO teste: com o caminho absoluto cravado, este
-// arquivo só rodava na máquina onde foi escrito, e quebrava em qualquer clone.
-const ROOT = require('path').resolve(__dirname, '..');
+const ROOT = require('path').join(__dirname, '..');  // caminho relativo ao proprio arquivo: cravado, so rodava na maquina onde foi escrito
 const ctx = { console, location:{origin:''}, setTimeout, JSON, Math, Date };
 ctx.window = ctx;
 vm.createContext(ctx);

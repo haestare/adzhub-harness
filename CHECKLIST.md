@@ -6,17 +6,15 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 
 | Requisito | Status |
 |---|---|
-| PDF, máx. 3 MB, português | ✅ 323 KB |
-| Curto, estilo arXiv/OpenHands, porém simples | ✅ 7 páginas, 2 colunas |
+| PDF, máx. 3 MB, português | ✅ 318 KB |
+| Curto, estilo arXiv/OpenHands, porém simples | ✅ 6 páginas, 2 colunas |
 | Tese defendida (não só descrita) | ✅ Harness Tri-Camada; §2.3 mapeia as 5 famílias (Tabela 1) e §3.1 defende a composição |
 | Anotações de estudo / decisões / trade-offs | ✅ §1, §2.3, §3.1, §3.3 |
 | Considera supercérebro + Apps + APIs | ✅ §2.2 (por que grafo, por que tempo é camada, por que App ≠ tool, o que os canais mudam) + §3.2 |
 | Pontos críticos por tarefa do gestor | ✅ §6 é seção própria: 7 tarefas na Tabela 3 + os dois casos graves em prosa |
-| Achado próprio, medido | ✅ Quadro 1: entrada de 3,0k → 11,4k tokens contra ~434 de saída num turno de 5 passos |
-| O que ficou de fora de propósito | ✅ §7 nomeia a camada de integrações (conectar contas, OAuth, cofre de credencial, estado de conexão, multi-conta) e a geração de criativo, com a razão honesta: escopo do harness desconhecido, não descuido. E mostra que a tese acomoda isso sem mexer no loop |
+| Achado próprio, medido | ✅ Quadro 1: entrada de 2,9k → 11,3k tokens contra ~434 de saída num turno de 5 passos |
 | As 11 perguntas do roteiro | ✅ mapa em `paper/GUIA-DO-PAPER.md` |
-| Figura + tabela + referências | ✅ Figura 1, Quadro 1, Tabelas 1-3, 6 refs |
-| Palavras-chave no formato do modelo | ✅ 8 termos: os 3 obrigatórios (`harness`, tipo escolhido, domínio AdzHub) mais 5 próprios, dentro da faixa de 3 a 6 |
+| Figura + tabela + referências | ✅ Figura 1, Tabela 1, 6 refs |
 | Fontes de estudo registradas | ✅ OpenHands, ReAct, CodeAct, **RLM (2512.24601)**, Zep/Graphiti, Anthropic |
 
 ## Protótipo (peso 25%, recomendado)
@@ -29,7 +27,7 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Campo na UI para colar `OPENROUTER_API_KEY` | ✅ modal Configurar |
 | Key só na sessão do browser, não persiste no servidor | ✅ `sessionStorage`, nunca vai ao backend |
 | Trocar de modelo | ✅ dropdown clicável |
-| Simula tools/APIs/Supercérebro com dataset | ✅ 7 mocks cruzados × **2 clientes** (Housewhey + Bravo Pet como grupo de controle) |
+| Simula tools/APIs/Supercérebro com dataset | ✅ 7 mocks cruzados (Housewhey) |
 | Deploy público (Railway recomendado) | ✅ https://adzhub-harness-production.up.railway.app |
 | UI/UX | ✅ layout de três colunas seguindo o design de referência da AdzHub, **uma conversa por tarefa** (histórico e trace separados, e dá para sair de uma conversa com a resposta ainda sendo escrita: ela continua na conversa que a pediu, com indicador na lateral), tema claro/escuro em par com escada de contraste, balão azul do gestor à direita, tabelas estilo Ads Manager, resposta digitada ao vivo, trace agrupado (Nx) |
 | Entrada do composer | ✅ **+** abre menu de tipo num clique e o explorador direto no duplo clique; anexo de CSV/TSV/JSON/TXT/MD lido no browser e cortado em 40 mil caracteres pelo harness; ditado contínuo pela API de fala do navegador, que entra no texto já escrito e só para no clique (sem segunda chave, ver §5 do paper). `build/test_voz.js` trava as duas regressões |
@@ -37,25 +35,17 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Consumo de tokens visível pro gestor | ✅ por chamada (trace), por turno (rodapé com tabela) e por sessão (medidor no topo), com custo em US$ quando o provedor devolve |
 | Bônus: roda sem key (modo simulado) | ✅ avaliador testa sem colar chave |
 
-## Formulário — ✅ ENTREGUE em 2026-08-21 (prazo era 28/08)
+## Formulário
 
-| Campo | Valor enviado |
+| Campo | Valor |
 |---|---|
 | Nome completo | Rafael Yran Azevedo |
 | WhatsApp | o mesmo da candidatura |
 | Tipo de harness | Outra / híbrida / própria (Harness Tri-Camada) |
-| Paper (PDF) | `paper/paper.pdf` (7 páginas, 323 KB) |
+| Paper (PDF) | `paper/paper.pdf` |
 | Repositório GitHub (público) | https://github.com/haestare/adzhub-harness |
 | URL da demo | https://adzhub-harness-production.up.railway.app |
 | Notas | só-leitura por design, dados mock, 5 problemas plantados não rotulados, modo simulado + LLM/OpenRouter |
-
-🔴 **O que muda agora que o formulário foi enviado: o repo e a demo continuam VIVOS, e o avaliador olha o estado do
-momento em que ele abrir, não o do momento da entrega.** Os dois gatilhos de espelho (`.githooks/post-commit` e o
-hook `Stop`) empurram todo commit que toque `adzhub-harness/` para o repo público, e o Railway redeploya a partir
-dele. Ou seja **commit daqui pra frente é publicação na cara do avaliador**, com duas consequências práticas:
-o `paper.pdf` do repo tem que continuar sendo exatamente o PDF que foi anexado no formulário (mexer no
-`paper.html` sem regerar o PDF faz o repo contradizer a entrega), e mudança no `web/` durante uma leitura dele
-troca a demo debaixo do pé. **Se for mexer, mexer em lote e regerar o PDF junto.**
 
 ## Estado do protótipo (o que o avaliador encontra)
 
@@ -91,15 +81,16 @@ troca a demo debaixo do pé. **Se for mexer, mexer em lote e regerar o PDF junto
   `build/test_uso.js` cobre isso e mais 19 asserções, sem rede e sem chave.
 - Docs: `paper/GUIA-DO-PAPER.pdf` e `CHECKLIST.pdf` (versões em PDF, mais fáceis de ler).
 
-## Pendente no paper
+## Pendente no paper (decisão do Rafa, 19/08)
 
-Nada. Os três assuntos que estavam abertos foram escritos em 20-21/08:
+Três assuntos ficaram de fora por escolha e estão descritos em `paper/GUIA-DO-PAPER.md`.
+Cada um vale meia página no critério "aprofundamento no estudo":
 
-| Assunto | Onde ficou |
+| Assunto | Por que renderia ponto |
 |---|---|
-| Gestão de contexto em sessão longa | §3.4, com a proposta de resumo entre sessões analisada em 6 riscos e as regras que a tornam adotável |
-| Falha de tool e paralelismo | §3.5: falha vira observação e não exceção; paralelismo só em leitura sem dependência |
-| Multi-conta | construído: 2º cliente no mock, seletor na UI, §4.2 no paper e `build/test_contas.js` |
+| Gestão de contexto em sessão longa | é a consequência direta do Quadro 1; hoje o §7 só admite a lacuna |
+| Como saber se o harness funciona (traces de referência, regressão) | é o assunto que mais sinaliza vaga fundacional |
+| Falha de tool e paralelismo (erro, rate limit, dado parcial) | hoje o paper não fala de erro em lugar nenhum |
 
 ## Opcionais que ficam de fora (não bloqueiam a entrega)
 - Ouvir o **podcast AdzHub · Harness** e o **How I AI** e citar uma frase no §1 (reforça o critério

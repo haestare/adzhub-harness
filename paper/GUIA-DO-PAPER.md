@@ -117,46 +117,17 @@ porque metodologia é produto e não prompt). Isso é o que a pergunta 4 pede. A
 - **RLM (contexto como ambiente):** é a peça que cura a fraqueza do ReAct puro. É de onde vem a
   "hidratação".
 
-**3.4 (Memória entre sessões)** é a sua ideia, analisada: ao fim de cada sessão o harness grava um
-resumo dos pontos principais, e a próxima sessão consulta. **Defenda pelo custo, não pela
-conveniência:** é a única forma barata de a mensagem 40 não reenviar as 39 anteriores, e ela cabe
-na tese sem tocar no loop, porque o resumo entra como memória hidratada, não como tool nova.
-Os **seis riscos** estão no paper e é bom saber dizer os três principais de cabeça: (a) o resumo
-resume da FONTE, nunca de outro resumo, senão o desvio compõe como telefone sem fio; (b) guarda
-**decisão e intenção com data, número nunca**, porque número vem da tool na hora da pergunta e um
-resumo antigo contradiz o dado novo com a mesma confiança; (c) cada ponto carrega ponteiro para o
-evento que o sustenta, porque quem escreve o resumo é o modelo, e resumo sem revisão é texto não
-verificado entrando na memória permanente.
-
-**3.5 (Falha e paralelismo)** responde uma pergunta que o paper não respondia. A frase que resume:
-**falha vira observação, nunca exceção** — o loop continua e a resposta diz o que faltou, porque um
-agente que responde igual com e sem metade dos dados é pior que um que não responde. E a distinção
-que mais vale citar: **dado vazio não é erro, é resposta**; confundir os dois faz o agente concluir
-que o anúncio não vendeu quando o CRM apenas não respondeu.
-
 ### 4. Sistema (o que o protótipo ilustra)
 **O que diz:** descreve o protótipo (dois motores: simulado e LLM), o trace visível, e um **turno
 concreto** (intent → hidratação → tools → observação → resposta) para o diagnóstico do Ômega 3.
 Tem o **Quadro 1** (o custo real de um turno de 5 passos, medido passo a passo), a **Tabela 2**
 (cada peça: tool/memória/app, papel, onde vive) e explica os datasets e o campo de OpenRouter.
-**O Quadro 1 é o achado próprio do trabalho** e vale destacar na conversa: a entrada vai de 3,0k
-a 11,4k tokens dentro de um único turno, contra ~434 de saída, porque cada passo reenvia a
+**O Quadro 1 é o achado próprio do trabalho** e vale destacar na conversa: a entrada vai de 2,9k
+a 11,3k tokens dentro de um único turno, contra ~434 de saída, porque cada passo reenvia a
 conversa inteira mais todas as observações já colhidas. A consequência prática é de projeto: uma
 tool que devolve JSON cru não custa uma vez, custa uma vez por passo restante do turno.
 **Por que está aí:** responde as perguntas 8 (o que o protótipo ilustra), 9 (datasets, o que é
 fake) e 10 (OpenRouter na UI).
-**Multi-conta (§4.2), e é um bom lugar para mostrar rigor:** o mock tem duas contas, e a segunda
-(Bravo Pet) é **grupo de controle**, montada como o inverso da primeira. O argumento: *se a resposta
-for parecida nas duas, o agente não está lendo o dado*. E o desenho por trás: **a conta é estado do
-harness, nunca argumento de tool**, então o modelo não alcança outro cliente nem por engano nem por
-instrução plantada no contexto. Se fosse parâmetro, isolamento seria promessa de prompt; sendo
-estado, é propriedade do runtime, e `build/test_contas.js` falha se alguma tool voltar a expor o campo.
-
-**O guard-rail de escopo tem número (§4.1):** perguntei ao agente sobre culinária e o turno custou
-**1 chamada, 0 tools, 2,5k de entrada e 41 de saída (US$ 0,0004)**, contra 5 chamadas e 39,5k do
-diagnóstico. Cerca de 16x menos. O ponto não é a recusa, é *onde* ela acontece: antes do loop, então
-a pergunta fora do domínio não vira investigação nem paga reenvio.
-
 **Como defender:** "O protótipo não executa a infra do paper. Ele **simula** o resultado: as tools
 leem um mock cruzado, e o trace mostra o harness orquestrar. O avaliador vê a tese acontecendo."
 
@@ -177,33 +148,9 @@ honestos valem pontos: mostram que você conhece os limites.
 
 ### 7. Limitações e próximos passos
 **O que diz:** o que fica de fora por escolha (só-leitura, um cliente, memória mock, política de
-compactação de contexto em sessão longa), **o que ficou de fora de propósito** (a camada de
-integrações e a geração de criativo) e "com mais uma semana eu faria X, e deliberadamente NÃO
-faria Y".
+compactação de contexto em sessão longa) e "com mais uma semana eu faria X, e deliberadamente
+NÃO faria Y".
 **Por que está aí:** responde a pergunta 11.
-
-**A parte de integrações é a que mais vale ensaiar**, porque é onde a humildade vira argumento em
-vez de virar buraco. A resposta tem três movimentos, nesta ordem:
-
-1. **O que não existe, sem rodeio.** Nenhuma tela de conectar conta, nenhum OAuth por cliente,
-   nenhum cofre de credencial, nenhum estado de conexão (token expirado, permissão revogada,
-   conta trocada), nenhuma seleção de conta em quem tem várias. E nenhuma geração de imagem ou
-   vídeo: o agente escreve o brief, não produz a peça.
-2. **Por quê, com a razão honesta na frente.** Recorte de protótipo é metade. A outra metade é que
-   você **não conhece o escopo completo do harness que a AdzHub pretende**: quem conecta a conta,
-   como a credencial é guardada e rotacionada, como funciona multi-conta, que permissão cada
-   perfil tem, o que acontece se o token cai no meio de um turno. Sem essas respostas, desenhar
-   superfície de credencial é inventar requisito, e requisito inventado em cima de credencial de
-   anúncio custa caro depois. **Deixar o buraco visível é mais defensável que preencher com
-   suposição** — e é exatamente o tipo de decisão que um avaliador de vaga fundacional procura.
-3. **Por que isso não derruba a tese.** Pela arquitetura de três camadas, integração nova é
-   **tool nova na allowlist**: o loop não muda. Conectar contas é produto em volta do harness.
-   E geração de criativo entraria como **App (skill)**, não como tool crua, porque carrega
-   metodologia e restrição de marca. Se te perguntarem "e quando plugar o Meta de verdade?", a
-   resposta é: muda a allowlist e o grafo ganha nós, não muda o mecanismo.
-
-⚠️ **O que NÃO dizer:** "não deu tempo". Não é verdade e é mais fraco. O que faltou foi
-informação de escopo, não hora.
 **Como defender:** "O join Meta x CRM depende de UTM limpo; no mundo real UTM falta e a atribuição
 diverge. A hidratação rasa pode não achar o nó certo por sinônimo. O agente correlaciona, não
 prova causa."
@@ -332,7 +279,7 @@ Três coisas que vale saber antes de mexer:
   não se separa da legenda na quebra de página. Isso não é preciosismo: sem o bloco, a legenda
   da Tabela 1 ficou órfã no fim de uma página e a tabela apareceu sozinha na seguinte.
 
-Depois de gerar, confira o resultado **como página**, não como código: 7 páginas, abaixo de
+Depois de gerar, confira o resultado **como página**, não como código: 6 páginas, abaixo de
 3 MB, e nenhuma tabela cortada no meio. Um jeito rápido de olhar página a página:
 
 ```
@@ -342,7 +289,15 @@ python3 -c "import pymupdf; d=pymupdf.open('paper/paper.pdf'); \
 
 ---
 
-## Pendente
+## Pendente (decisão sua)
 
-Nada no paper. Os três assuntos que estavam abertos (contexto em sessão longa, avaliação do harness,
-falha de tool) foram escritos: os dois primeiros viraram §3.4 e §3.5, e o multi-conta virou código.
+Três assuntos ficaram **de fora por escolha**, não por esquecimento, e cada um renderia meia
+página na linha de "aprofundamento no estudo":
+
+1. **Gestão de contexto em sessão longa.** O que é descartado quando a conversa passa de 40
+   mensagens (compactação, sumarização, o que nunca pode sair). É a consequência direta do
+   número do Quadro 1, e hoje o paper só admite a lacuna no §7.
+2. **Como saber se o harness funciona.** Traces de referência, regressão de comportamento,
+   o que se mede quando a saída é texto. É o assunto que mais sinaliza vaga fundacional.
+3. **Falha de tool e paralelismo.** API que erra, rate limit, dado parcial, e duas tools que
+   poderiam rodar ao mesmo tempo. Hoje o paper não fala de erro em nenhum lugar.

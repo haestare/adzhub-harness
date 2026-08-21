@@ -12,7 +12,7 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Anotações de estudo / decisões / trade-offs | ✅ §1, §2.3, §3.1, §3.3 |
 | Considera supercérebro + Apps + APIs | ✅ §2.2 (por que grafo, por que tempo é camada, por que App ≠ tool, o que os canais mudam) + §3.2 |
 | Pontos críticos por tarefa do gestor | ✅ §6 é seção própria: 7 tarefas na Tabela 3 + os dois casos graves em prosa |
-| Achado próprio, medido | ✅ Quadro 1: entrada de 2,9k → 11,3k tokens contra ~434 de saída num turno de 5 passos |
+| Achado próprio, medido | ✅ Quadro 1: entrada de 3,0k → 11,4k tokens contra ~434 de saída num turno de 5 passos |
 | O que ficou de fora de propósito | ✅ §7 nomeia a camada de integrações (conectar contas, OAuth, cofre de credencial, estado de conexão, multi-conta) e a geração de criativo, com a razão honesta: escopo do harness desconhecido, não descuido. E mostra que a tese acomoda isso sem mexer no loop |
 | As 11 perguntas do roteiro | ✅ mapa em `paper/GUIA-DO-PAPER.md` |
 | Figura + tabela + referências | ✅ Figura 1, Quadro 1, Tabelas 1-3, 6 refs |

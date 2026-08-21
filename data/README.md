@@ -1,9 +1,10 @@
-# Dataset mock AdzHub · Housewhey
+# Dataset mock AdzHub · Housewhey e Bravo Pet
 
 Contrato **fictício** que simula as três camadas que o harness consultaria no mundo real
-(Supercérebro, Apps e APIs). Não é o schema de produção da AdzHub. Um cliente só,
-coerente ponta a ponta: `ad_id` no Meta = `utm_content` no CRM, pessoas do grafo aparecem
-na timeline e no WhatsApp, criativos do App batem com os anúncios.
+(Supercérebro, Apps e APIs). Não é o schema de produção da AdzHub. **Duas contas**, cada uma
+numa subpasta (`housewhey/` e `bravopet/`) e cada uma coerente ponta a ponta: `ad_id` no Meta =
+`utm_content` no CRM, pessoas do grafo aparecem na timeline e no WhatsApp, criativos do App
+batem com os anúncios.
 
 Cliente: **Housewhey** (e-commerce de suplementos), operação **SPOT**, time **Aline**
 (tráfego), **Carolina** (gestão), **Luiza** (atendimento/WhatsApp). Janela: jun-ago/2026.
@@ -12,16 +13,21 @@ Cliente: **Housewhey** (e-commerce de suplementos), operação **SPOT**, time **
 
 Cada arquivo vira uma tool do harness. Retorno sempre JSON; erro `{ "ok": false, "error": "..." }`.
 
-| Tool | Camada simulada | Arquivo | Args |
+🔴 **Nenhuma tool recebe o cliente como argumento.** A conta é **estado do harness**, não
+parâmetro: o modelo não tem como pedir dado de outro cliente, porque o campo não existe na
+assinatura. Quem troca de conta é o humano, e o harness reescopa as três camadas de uma vez.
+`build/test_contas.js` falha se alguma tool voltar a expor esse campo.
+
+| Tool | Camada simulada | Arquivo | Args (os de verdade) |
 |---|---|---|---|
-| `search_client_context` | Supercérebro · grafo | `supercerebro_graph.json` | `{ query, client_id? }` |
-| `get_timeline` | Supercérebro · temporal | `supercerebro_timeline.json` | `{ client_id, since?, until? }` |
-| `list_ads` | API Meta Ads | `api_meta_ads.json` | `{ client_id, since?, until? }` |
+| `search_client_context` | Supercérebro · grafo | `supercerebro_graph.json` | `{ query? }` |
+| `get_timeline` | Supercérebro · temporal | `supercerebro_timeline.json` | `{ since?, until? }` |
+| `list_ads` | API Meta Ads | `api_meta_ads.json` | `{ since?, until? }` |
 | `get_ad_insights` | API Meta Ads | `api_meta_ads.json` | `{ ad_id }` |
-| `get_leads` | API CRM | `api_crm_leads.json` | `{ client_id, since?, until?, utm_content? }` |
-| `run_app_analise_criativos` | App metodologia | `app_analise_criativos.json` | `{ client_id }` |
-| `get_mapa_solucao` | App contexto de marca | `app_mapa_solucao.json` | `{ client_id }` |
-| `search_conversations` | Memória de canal | `conversas.json` | `{ query, client_id }` |
+| `get_leads` | API CRM | `api_crm_leads.json` | `{ since?, until?, utm_content? }` |
+| `run_app_analise_criativos` | App metodologia | `app_analise_criativos.json` | nenhum |
+| `get_mapa_solucao` | App contexto de marca | `app_mapa_solucao.json` | nenhum |
+| `search_conversations` | Memória de canal | `conversas.json` | `{ query? }` |
 
 Distinção que a tese defende: **APIs são tools** (dado cru, o LLM chama quando precisa),
 **Supercérebro é memória/ambiente** (contexto temporal hidratado, não consultado às cegas),

@@ -144,9 +144,14 @@ chromium --headless=new --no-pdf-header-footer \
   --print-to-pdf=paper/paper.pdf "file://$PWD/paper/paper.html"
 ```
 
-## Escopo e recorte (resumo; detalhe no paper §6)
+## Escopo e recorte (resumo; detalhe no paper §6 e §7)
 
 - **Só-leitura por escolha:** nenhuma tool escreve na conta. O agente propõe; o humano executa.
-- **Um cliente, dados mock:** sem multi-tenant, sem auth. A memória real (grafo temporal com
-  resolução de entidade) fica de fora do MVP, por design.
+- **Duas contas, dados mock:** trocar de cliente reescopa memória, APIs e Apps de uma vez, e a
+  conta é **estado do harness, nunca argumento de tool**. Mas é escopo *simulado*: sem
+  autenticação, sem credencial por cliente, sem isolamento no banco. A memória real (grafo
+  temporal com resolução de entidade) também fica de fora do MVP, por design.
+- **Sem camada de integrações:** nenhuma tela de conectar conta, nenhum OAuth, nenhuma geração
+  de criativo por imagem. O paper (§7) diz por quê, e a razão principal é não conhecer o escopo
+  completo pretendido, não falta de tempo.
 - **Modo LLM** é code-complete mas depende da chave do avaliador (não embarco chave).

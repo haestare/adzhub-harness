@@ -139,8 +139,8 @@ que o anúncio não vendeu quando o CRM apenas não respondeu.
 concreto** (intent → hidratação → tools → observação → resposta) para o diagnóstico do Ômega 3.
 Tem o **Quadro 1** (o custo real de um turno de 5 passos, medido passo a passo), a **Tabela 2**
 (cada peça: tool/memória/app, papel, onde vive) e explica os datasets e o campo de OpenRouter.
-**O Quadro 1 é o achado próprio do trabalho** e vale destacar na conversa: a entrada vai de 2,9k
-a 11,3k tokens dentro de um único turno, contra ~434 de saída, porque cada passo reenvia a
+**O Quadro 1 é o achado próprio do trabalho** e vale destacar na conversa: a entrada vai de 3,0k
+a 11,4k tokens dentro de um único turno, contra ~434 de saída, porque cada passo reenvia a
 conversa inteira mais todas as observações já colhidas. A consequência prática é de projeto: uma
 tool que devolve JSON cru não custa uma vez, custa uma vez por passo restante do turno.
 **Por que está aí:** responde as perguntas 8 (o que o protótipo ilustra), 9 (datasets, o que é

@@ -13,7 +13,10 @@ Problemas plantados (NAO rotulados no dado):
 """
 import json, os, sys, datetime
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else "adzhub-harness/data"
+# mesmo motivo do embed_data.py: o padrão sai da raiz do PRÓPRIO projeto, senão
+# um `python3 build/gen_dataset.py` sem argumento só funciona no workspace
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(RAIZ, "data")
 os.makedirs(OUT, exist_ok=True)
 BASE = datetime.date(2026, 6, 1)          # base fixa
 def d(offset_days):                        # data ISO a partir da base

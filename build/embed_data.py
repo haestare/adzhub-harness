@@ -4,8 +4,13 @@
 Assim o protótipo roda de file:// (duplo clique) e de qualquer host estatico,
 sem depender de fetch() nem de servidor."""
 import json, os
-SRC = "adzhub-harness/data"
-OUT = "adzhub-harness/web/data.js"
+# ⚠️ Caminhos relativos ao PRÓPRIO script, nunca ao diretório de onde ele foi
+# chamado: o projeto vive em dois lugares (workspace e repo público de entrega) e
+# um caminho fixo como "adzhub-harness/data" só funciona em um deles. No outro o
+# comando documentado no README quebra com FileNotFoundError.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.join(RAIZ, "data")
+OUT = os.path.join(RAIZ, "web", "data.js")
 files = {
   "graph": "supercerebro_graph.json",
   "timeline": "supercerebro_timeline.json",

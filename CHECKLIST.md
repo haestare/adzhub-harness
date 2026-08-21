@@ -6,8 +6,8 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 
 | Requisito | Status |
 |---|---|
-| PDF, máx. 3 MB, português | ✅ 318 KB |
-| Curto, estilo arXiv/OpenHands, porém simples | ✅ 6 páginas, 2 colunas |
+| PDF, máx. 3 MB, português | ✅ 323 KB |
+| Curto, estilo arXiv/OpenHands, porém simples | ✅ 7 páginas, 2 colunas |
 | Tese defendida (não só descrita) | ✅ Harness Tri-Camada; §2.3 mapeia as 5 famílias (Tabela 1) e §3.1 defende a composição |
 | Anotações de estudo / decisões / trade-offs | ✅ §1, §2.3, §3.1, §3.3 |
 | Considera supercérebro + Apps + APIs | ✅ §2.2 (por que grafo, por que tempo é camada, por que App ≠ tool, o que os canais mudam) + §3.2 |
@@ -37,17 +37,25 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Consumo de tokens visível pro gestor | ✅ por chamada (trace), por turno (rodapé com tabela) e por sessão (medidor no topo), com custo em US$ quando o provedor devolve |
 | Bônus: roda sem key (modo simulado) | ✅ avaliador testa sem colar chave |
 
-## Formulário
+## Formulário — ✅ ENTREGUE em 2026-08-21 (prazo era 28/08)
 
-| Campo | Valor |
+| Campo | Valor enviado |
 |---|---|
 | Nome completo | Rafael Yran Azevedo |
 | WhatsApp | o mesmo da candidatura |
 | Tipo de harness | Outra / híbrida / própria (Harness Tri-Camada) |
-| Paper (PDF) | `paper/paper.pdf` |
+| Paper (PDF) | `paper/paper.pdf` (7 páginas, 323 KB) |
 | Repositório GitHub (público) | https://github.com/haestare/adzhub-harness |
 | URL da demo | https://adzhub-harness-production.up.railway.app |
 | Notas | só-leitura por design, dados mock, 5 problemas plantados não rotulados, modo simulado + LLM/OpenRouter |
+
+🔴 **O que muda agora que o formulário foi enviado: o repo e a demo continuam VIVOS, e o avaliador olha o estado do
+momento em que ele abrir, não o do momento da entrega.** Os dois gatilhos de espelho (`.githooks/post-commit` e o
+hook `Stop`) empurram todo commit que toque `adzhub-harness/` para o repo público, e o Railway redeploya a partir
+dele. Ou seja **commit daqui pra frente é publicação na cara do avaliador**, com duas consequências práticas:
+o `paper.pdf` do repo tem que continuar sendo exatamente o PDF que foi anexado no formulário (mexer no
+`paper.html` sem regerar o PDF faz o repo contradizer a entrega), e mudança no `web/` durante uma leitura dele
+troca a demo debaixo do pé. **Se for mexer, mexer em lote e regerar o PDF junto.**
 
 ## Estado do protótipo (o que o avaliador encontra)
 

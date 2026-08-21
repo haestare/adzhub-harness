@@ -19,7 +19,7 @@ os **Apps** de metodologia são **skills** encapsuladas. É um híbrido de ReAct
 
 | | |
 |---|---|
-| **Paper (a entrega)** | [`paper/paper.pdf`](paper/paper.pdf) · 6 páginas, PT-BR |
+| **Paper (a entrega)** | [`paper/paper.pdf`](paper/paper.pdf) · 7 páginas, PT-BR |
 | **Demo no ar** | https://adzhub-harness-production.up.railway.app |
 | **Rodar local** | abra `web/index.html` (roda de `file://`, sem servidor e sem chave) |
 | **Gabarito do dataset** | [`data/README.md`](data/README.md) · os 5 problemas plantados |
@@ -29,7 +29,7 @@ os **Apps** de metodologia são **skills** encapsuladas. É um híbrido de ReAct
 ```
 adzhub-harness/
 ├── paper/
-│   ├── paper.pdf        ← ENTREGA PRINCIPAL (6 páginas, arXiv 2-col, PT-BR)
+│   ├── paper.pdf        ← ENTREGA PRINCIPAL (7 páginas, arXiv 2-col, PT-BR)
 │   └── paper.html       ← fonte do PDF
 ├── web/                 ← protótipo de chat (estático, sem backend)
 │   ├── index.html

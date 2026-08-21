@@ -332,7 +332,7 @@ Três coisas que vale saber antes de mexer:
   não se separa da legenda na quebra de página. Isso não é preciosismo: sem o bloco, a legenda
   da Tabela 1 ficou órfã no fim de uma página e a tabela apareceu sozinha na seguinte.
 
-Depois de gerar, confira o resultado **como página**, não como código: 6 páginas, abaixo de
+Depois de gerar, confira o resultado **como página**, não como código: 7 páginas, abaixo de
 3 MB, e nenhuma tabela cortada no meio. Um jeito rápido de olhar página a página:
 
 ```

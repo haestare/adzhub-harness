@@ -148,9 +148,33 @@ honestos valem pontos: mostram que você conhece os limites.
 
 ### 7. Limitações e próximos passos
 **O que diz:** o que fica de fora por escolha (só-leitura, um cliente, memória mock, política de
-compactação de contexto em sessão longa) e "com mais uma semana eu faria X, e deliberadamente
-NÃO faria Y".
+compactação de contexto em sessão longa), **o que ficou de fora de propósito** (a camada de
+integrações e a geração de criativo) e "com mais uma semana eu faria X, e deliberadamente NÃO
+faria Y".
 **Por que está aí:** responde a pergunta 11.
+
+**A parte de integrações é a que mais vale ensaiar**, porque é onde a humildade vira argumento em
+vez de virar buraco. A resposta tem três movimentos, nesta ordem:
+
+1. **O que não existe, sem rodeio.** Nenhuma tela de conectar conta, nenhum OAuth por cliente,
+   nenhum cofre de credencial, nenhum estado de conexão (token expirado, permissão revogada,
+   conta trocada), nenhuma seleção de conta em quem tem várias. E nenhuma geração de imagem ou
+   vídeo: o agente escreve o brief, não produz a peça.
+2. **Por quê, com a razão honesta na frente.** Recorte de protótipo é metade. A outra metade é que
+   você **não conhece o escopo completo do harness que a AdzHub pretende**: quem conecta a conta,
+   como a credencial é guardada e rotacionada, como funciona multi-conta, que permissão cada
+   perfil tem, o que acontece se o token cai no meio de um turno. Sem essas respostas, desenhar
+   superfície de credencial é inventar requisito, e requisito inventado em cima de credencial de
+   anúncio custa caro depois. **Deixar o buraco visível é mais defensável que preencher com
+   suposição** — e é exatamente o tipo de decisão que um avaliador de vaga fundacional procura.
+3. **Por que isso não derruba a tese.** Pela arquitetura de três camadas, integração nova é
+   **tool nova na allowlist**: o loop não muda. Conectar contas é produto em volta do harness.
+   E geração de criativo entraria como **App (skill)**, não como tool crua, porque carrega
+   metodologia e restrição de marca. Se te perguntarem "e quando plugar o Meta de verdade?", a
+   resposta é: muda a allowlist e o grafo ganha nós, não muda o mecanismo.
+
+⚠️ **O que NÃO dizer:** "não deu tempo". Não é verdade e é mais fraco. O que faltou foi
+informação de escopo, não hora.
 **Como defender:** "O join Meta x CRM depende de UTM limpo; no mundo real UTM falta e a atribuição
 diverge. A hidratação rasa pode não achar o nó certo por sinônimo. O agente correlaciona, não
 prova causa."

@@ -181,10 +181,10 @@ body {
    continuam exatamente onde estavam. */
 .msg-host { flex: 1; min-height: 0; display: flex; }
 .messages { display: none; flex: 1; overflow-y: auto; padding: 22px 24px 10px; scroll-behavior: smooth; }
-.messages.on { display: block; }
+.messages.on.desta-conta { display: block; }
 .trace-host { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .trace-host > .steps { display: none; }
-.trace-host > .steps.on { display: flex; overflow-y: auto; overflow-x: hidden; }
+.trace-host > .steps.on.desta-conta { display: flex; overflow-y: auto; overflow-x: hidden; }
 .msg { max-width: 820px; margin: 0 auto 16px; display: flex; gap: 10px; align-items: flex-start; animation: msgIn .42s var(--spring) both; }
 @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .msg .avatar { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; color: #fff; background: linear-gradient(140deg, var(--mark-a), var(--mark-b)); margin-top: 3px; }
@@ -560,3 +560,17 @@ table.fb-table { border-collapse: collapse; width: 100%; min-width: max-content;
   animation: sp .7s linear infinite;
 }
 .conv.rodando .txt b { color: var(--accent); }
+
+/* ---- seletor de cliente (multi-conta) ------------------------------------ */
+.conta-wrap { position: relative; margin: 0 12px 10px; }
+.conta {
+  width: 100%; display: flex; align-items: center; gap: 9px; cursor: pointer; text-align: left;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
+  padding: 7px 10px; color: var(--txt); font-family: var(--sans); font-size: 13px;
+  transition: border-color .15s;
+}
+.conta:hover { border-color: var(--accent); }
+.conta-nome { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.av-conta { width: 24px; height: 24px; font-size: 10.5px; background: linear-gradient(140deg, var(--mark-a), var(--mark-b)); }
+.conta-wrap .menu { left: 0; right: 0; top: calc(100% + 6px); bottom: auto; min-width: 0; }
+.menu-item.atual { color: var(--accent); font-weight: 600; }

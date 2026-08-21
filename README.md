@@ -35,10 +35,10 @@ adzhub-harness/
 │   ├── index.html
 │   ├── styles.css
 │   ├── data.js          ← dataset embutido (roda de file:// sem servidor)
-│   ├── data/            ← os 7 JSONs crus (mesmo dado)
+│   ├── data/            ← os 7 JSONs crus por cliente (mesmo dado)
 │   └── js/  tools.js · usage.js · nexo.js · planner.js · openrouter.js · harness.js
 │             modelos.js · dropdown.js · comandos.js · entrada.js · app.js
-├── data/                ← dataset mock + README com o "gabarito" dos problemas plantados
+├── data/                ← dataset mock por cliente (housewhey/ e bravopet/) + gabarito
 └── build/               ← scripts de geração (dataset, PDF, testes)
 ```
 
@@ -89,6 +89,12 @@ o tema. O painel de trace à direita mostra a
 hidratação de contexto (fase), as tool calls (badge por camada: memória/api/app) e a resposta
 ancorada. Cada passo é clicável e mostra args + observação (JSON).
 
+**Duas contas.** O seletor no topo da lateral troca de cliente: Housewhey (com os 5 problemas) e
+Bravo Pet, que é um **grupo de controle** com a situação invertida (verba sobrando, criativo
+saudável, origem batendo). Faça a mesma pergunta nas duas: se a resposta for parecida, o agente
+não está lendo o dado. A conta é **estado do harness, nunca argumento de tool**, então o modelo
+não alcança dado de outro cliente.
+
 Os **5 problemas plantados** (não rotulados no dado) e o gabarito estão em [`data/README.md`](data/README.md).
 
 ## Deploy
@@ -129,6 +135,9 @@ node build/test_modelos.js
 
 # testar o ditado e o anexo (reconhecedor falso, sem browser)
 node build/test_voz.js
+
+# testar o isolamento entre contas (nenhuma tool expõe `cliente` ao modelo)
+node build/test_contas.js
 
 # rebuildar o PDF do paper (usa Chromium headless)
 chromium --headless=new --no-pdf-header-footer \

@@ -29,7 +29,7 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
 | Campo na UI para colar `OPENROUTER_API_KEY` | ✅ modal Configurar |
 | Key só na sessão do browser, não persiste no servidor | ✅ `sessionStorage`, nunca vai ao backend |
 | Trocar de modelo | ✅ dropdown clicável |
-| Simula tools/APIs/Supercérebro com dataset | ✅ 7 mocks cruzados (Housewhey) |
+| Simula tools/APIs/Supercérebro com dataset | ✅ 7 mocks cruzados × **2 clientes** (Housewhey + Bravo Pet como grupo de controle) |
 | Deploy público (Railway recomendado) | ✅ https://adzhub-harness-production.up.railway.app |
 | UI/UX | ✅ layout de três colunas seguindo o design de referência da AdzHub, **uma conversa por tarefa** (histórico e trace separados, e dá para sair de uma conversa com a resposta ainda sendo escrita: ela continua na conversa que a pediu, com indicador na lateral), tema claro/escuro em par com escada de contraste, balão azul do gestor à direita, tabelas estilo Ads Manager, resposta digitada ao vivo, trace agrupado (Nx) |
 | Entrada do composer | ✅ **+** abre menu de tipo num clique e o explorador direto no duplo clique; anexo de CSV/TSV/JSON/TXT/MD lido no browser e cortado em 40 mil caracteres pelo harness; ditado contínuo pela API de fala do navegador, que entra no texto já escrito e só para no clique (sem segunda chave, ver §5 do paper). `build/test_voz.js` trava as duas regressões |
@@ -83,16 +83,15 @@ Revisão do que o desafio pede (guia + página oficial) contra o que está entre
   `build/test_uso.js` cobre isso e mais 19 asserções, sem rede e sem chave.
 - Docs: `paper/GUIA-DO-PAPER.pdf` e `CHECKLIST.pdf` (versões em PDF, mais fáceis de ler).
 
-## Pendente no paper (decisão do Rafa, 19/08)
+## Pendente no paper
 
-Três assuntos ficaram de fora por escolha e estão descritos em `paper/GUIA-DO-PAPER.md`.
-Cada um vale meia página no critério "aprofundamento no estudo":
+Nada. Os três assuntos que estavam abertos foram escritos em 20-21/08:
 
-| Assunto | Por que renderia ponto |
+| Assunto | Onde ficou |
 |---|---|
-| Gestão de contexto em sessão longa | é a consequência direta do Quadro 1; hoje o §7 só admite a lacuna |
-| Como saber se o harness funciona (traces de referência, regressão) | é o assunto que mais sinaliza vaga fundacional |
-| Falha de tool e paralelismo (erro, rate limit, dado parcial) | hoje o paper não fala de erro em lugar nenhum |
+| Gestão de contexto em sessão longa | §3.4, com a proposta de resumo entre sessões analisada em 6 riscos e as regras que a tornam adotável |
+| Falha de tool e paralelismo | §3.5: falha vira observação e não exceção; paralelismo só em leitura sem dependência |
+| Multi-conta | construído: 2º cliente no mock, seletor na UI, §4.2 no paper e `build/test_contas.js` |
 
 ## Opcionais que ficam de fora (não bloqueiam a entrega)
 - Ouvir o **podcast AdzHub · Harness** e o **How I AI** e citar uma frase no §1 (reforça o critério

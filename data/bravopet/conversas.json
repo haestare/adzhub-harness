@@ -1,0 +1,48 @@
+{
+  "client_id": "cli_bravopet",
+  "threads": [
+    {
+      "id": "conv_b_call",
+      "tipo": "call",
+      "canal": "Google Meet",
+      "occurred_at": "2026-08-08T16:45:00-03:00",
+      "participantes": [
+        "p_marcos",
+        "p_aline",
+        "p_sofia"
+      ],
+      "titulo": "Call quinzenal - Bravo Pet",
+      "resumo_pontos": [
+        "Marcos: CPA em R$ 62, abaixo da meta de R$ 80.",
+        "Aline: a Racao Premium nao esta gastando o budget diario cheio; entrega esta limitada, nao o contrario.",
+        "Sofia: 'se esta dando certo, por que nao esta gastando tudo?'",
+        "Combinado: SPOT traz proposta de subir o budget e a estimativa de impacto no CPA."
+      ]
+    },
+    {
+      "id": "conv_b_wpp",
+      "tipo": "whatsapp",
+      "canal": "WhatsApp",
+      "occurred_at": "2026-08-10T09:20:00-03:00",
+      "participantes": [
+        "p_marcos",
+        "p_sofia"
+      ],
+      "titulo": "WhatsApp - Marcos e Sofia (verba)",
+      "mensagens": [
+        {
+          "de": "p_marcos",
+          "texto": "Sofia, proposta: subir a Racao Premium de R$ 100 para R$ 160 por dia."
+        },
+        {
+          "de": "p_sofia",
+          "texto": "Deixa eu ver o caixa da semana e te falo. Nao quero estragar o CPA."
+        },
+        {
+          "de": "p_marcos",
+          "texto": "Entendo. A frequencia esta baixa, entao ainda tem publico novo pra pegar."
+        }
+      ]
+    }
+  ]
+}

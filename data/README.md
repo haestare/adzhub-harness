@@ -69,3 +69,23 @@ rotulados**. Quem descobre é o agente.
   pelo mesmo depoimento. Uma ação (pausar o depoimento) resolve P1, P2 e P5 de uma vez.
 
 Regerar: `python3 build/gen_dataset.py adzhub-harness/data` (determinístico).
+
+
+---
+
+## Segundo cliente: Bravo Pet (`data/bravopet/`)
+
+Existe para provar **isolamento entre contas**, não para ser um segundo quebra-cabeça.
+É de propósito um **grupo de controle**: os mesmos 7 arquivos, com a situação invertida.
+
+| Sinal | Housewhey | Bravo Pet |
+|---|---|---|
+| Verba | estoura o teto (R$ 6.200 vs R$ 5.000) | **sobra** (R$ 1.180 de R$ 100/dia) |
+| Criativo | saturado (hook 32% → 18%, freq. 1,8 → 4,8) | estável (hook 31%, freq. 1,6) |
+| CPA | R$ 2.100 no pior criativo | R$ 62, abaixo da meta de R$ 80 |
+| Origem declarada × UTM | **mente** (12 dizem Google, 4 têm UTM Google) | bate |
+| Peça bloqueada | sim (claim proibido) | nenhuma |
+
+**Como usar na avaliação:** faça a mesma pergunta nas duas contas. Se as respostas forem
+parecidas, o agente não está lendo o dado. `build/test_contas.js` trava isso sem browser,
+inclusive a invariante de que **nenhuma tool expõe `cliente` ao modelo**.

@@ -20,10 +20,21 @@ files = {
   "mapa": "app_mapa_solucao.json",
   "conversas": "conversas.json",
 }
-data = {k: json.load(open(os.path.join(SRC, v), encoding="utf-8")) for k, v in files.items()}
+def carregar(pasta):
+    d = {k: json.load(open(os.path.join(SRC, pasta, v), encoding="utf-8")) for k, v in files.items()}
+    # o nome de exibicao sai do proprio grafo (no hub do cliente), para nao haver
+    # uma segunda lista de nomes divergindo do dado
+    cid = d["graph"]["client_id"]
+    no = next((n for n in d["graph"]["nodes"] if n["id"] == cid), None)
+    d["nome"] = no["label"] if no else pasta
+    return d
+
+pastas = sorted(x for x in os.listdir(SRC) if os.path.isdir(os.path.join(SRC, x)))
+data = {"padrao": "housewhey" if "housewhey" in pastas else pastas[0],
+        "clientes": {p: carregar(p) for p in pastas}}
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "w", encoding="utf-8") as f:
-    f.write("// GERADO por build/embed_data.py — nao editar a mao. Fonte: adzhub-harness/data/*.json\n")
+    f.write("// GERADO por build/embed_data.py - nao editar a mao. Fonte: data/<cliente>/*.json\n")
     f.write("window.ADZHUB_DATA = ")
     json.dump(data, f, ensure_ascii=False, indent=2)
     f.write(";\n")

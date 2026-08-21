@@ -1,5 +1,7 @@
 const fs = require('fs'), vm = require('vm');
-const ROOT = '/home/user/Claude/adzhub-harness';
+// ⚠️ caminho relativo ao PRÓPRIO teste: com o caminho absoluto cravado, este
+// arquivo só rodava na máquina onde foi escrito, e quebrava em qualquer clone.
+const ROOT = require('path').resolve(__dirname, '..');
 const ctx = { console, location:{origin:''}, setTimeout, JSON, Math, Date };
 ctx.window = ctx;
 vm.createContext(ctx);
